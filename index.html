@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0ea5e9">
+    <title>AquaRealm</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(180deg, #0f172a 0%, #1e3a5f 50%, #0c4a6e 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .realm-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Sky & Clouds */
+        .sky {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .cloud {
+            position: absolute;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50px;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .cloud:nth-child(1) { width: 80px; height: 40px; top: 30px; left: 10%; animation-delay: 0s; }
+        .cloud:nth-child(2) { width: 60px; height: 30px; top: 60px; left: 60%; animation-delay: -5s; }
+        .cloud:nth-child(3) { width: 100px; height: 50px; top: 20px; left: 40%; animation-delay: -10s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(30px); }
+        }
+
+        /* Creature */
+        .creature-container {
+            position: relative;
+            height: 150px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin: -30px 0 20px;
+        }
+
+        .creature {
+            font-size: 80px;
+            transition: all 0.5s ease;
+            filter: drop-shadow(0 0 20px rgba(14, 165, 233, 0.5));
+            animation: breathe 3s infinite ease-in-out;
+        }
+
+        .creature.happy { filter: drop-shadow(0 0 30px rgba(34, 197, 94, 0.6)); transform: scale(1.1); }
+        .creature.thirsty { filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.4)); transform: scale(0.9); opacity: 0.7; }
+        .creature.ecstatic { filter: drop-shadow(0 0 40px rgba(168, 85, 247, 0.8)); transform: scale(1.2); animation: bounce 0.5s infinite alternate; }
+
+        @keyframes breathe {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0) scale(1.2); }
+            to { transform: translateY(-15px) scale(1.2); }
+        }
+
+        /* River */
+        .river-container {
+            position: relative;
+            height: 120px;
+            background: linear-gradient(180deg, #78350f 0%, #92400e 100%);
+            border-radius: 0 0 20px 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .river-bed {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                #92400e 0px,
+                #a16207 2px,
+                #92400e 4px
+            );
+        }
+
+        .river-water {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
+            transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50% 50% 0 0 / 20px 20px 0 0;
+        }
+
+        .river-water::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -50%;
+            right: -50%;
+            height: 20px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            animation: wave 3s infinite linear;
+        }
+
+        @keyframes wave {
+            0% { transform: translateX(0) rotate(0deg); }
+            100% { transform: translateX(50%) rotate(360deg); }
+        }
+
+        /* Trees */
+        .tree {
+            position: absolute;
+            font-size: 30px;
+            transition: all 0.5s ease;
+            bottom: 10px;
+        }
+
+        .tree.bloom { filter: brightness(1.3) saturate(1.5); transform: scale(1.2); }
+
+        /* Stats */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.1);
+            padding: 15px 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        /* Progress Ring */
+        .progress-ring-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        /* Main Button */
+        .drink-btn {
+            width: 100%;
+            padding: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 30px rgba(14, 165, 233, 0.3);
+        }
+
+        .drink-btn:hover { transform: translateY(-2px); box-shadow: 0 15px 40px rgba(14, 165, 233, 0.4); }
+        .drink-btn:active { transform: translateY(0); }
+
+        .drink-btn.pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 10px 30px rgba(14, 165, 233, 0.3); }
+            50% { box-shadow: 0 10px 40px rgba(14, 165, 233, 0.6); }
+        }
+
+        /* Quick Add */
+        .quick-add {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .quick-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .quick-btn:hover { background: rgba(255,255,255,0.2); border-color: #38bdf8; }
+
+        /* Quests */
+        .quests {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .quest-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quest {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+        }
+
+        .quest.complete { opacity: 0.5; text-decoration: line-through; }
+        .quest.complete .quest-check { background: #22c55e; }
+
+        .quest-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        /* Streak */
+        .streak-flame {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .flame {
+            transition: all 0.3s;
+        }
+
+        .flame.lit { filter: brightness(1.5); animation: flicker 1s infinite alternate; }
+
+        @keyframes flicker {
+            from { transform: scale(1) rotate(-2deg); }
+            to { transform: scale(1.1) rotate(2deg); }
+        }
+
+        /* Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(15, 23, 42, 0.95);
+            padding: 15px 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* Particles */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            animation: particleFloat 2s ease-out forwards;
+            z-index: 999;
+        }
+
+        @keyframes particleFloat {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(0); opacity: 0; }
+        }
+
+        /* Settings Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: linear-gradient(180deg, #1e3a5f, #0f172a);
+            padding: 25px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 350px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .modal h2 { margin-bottom: 15px; font-size: 20px; }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .setting-row:last-child { border-bottom: none; }
+
+        input[type="number"], input[type="time"] {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            width: 100px;
+        }
+
+        .close-btn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        /* History */
+        .history-bar {
+            display: flex;
+            gap: 4px;
+            margin-top: 10px;
+            overflow-x: auto;
+            padding: 5px;
+        }
+
+        .day-pill {
+            min-width: 40px;
+            height: 60px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 5px;
+            font-size: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .day-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+            border-radius: 0 0 10px 10px;
+            transition: height 0.5s ease;
+        }
+
+        .day-label {
+            z-index: 1;
+            margin-bottom: 2px;
+        }
+
+        .day-value {
+            z-index: 1;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        /* Install Button */
+        .install-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(139, 92, 246, 0.4);
+            display: none;
+            z-index: 100;
+        }
+
+        .install-btn.show { display: block; }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -10px;
+            animation: confettiFall 3s linear forwards;
+            z-index: 1000;
+        }
+
+        @keyframes confettiFall {
+            to { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="realm-container">
+    <!-- Sky -->
+    <div class="sky" id="sky">
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+    </div>
+
+    <!-- Creature -->
+    <div class="creature-container">
+        <div class="creature" id="creature">🦎</div>
+    </div>
+
+    <!-- River -->
+    <div class="river-container">
+        <div class="river-bed"></div>
+        <div class="river-water" id="riverWater" style="height: 0%"></div>
+        <div class="tree" id="tree1" style="left: 10%;">🌱</div>
+        <div class="tree" id="tree2" style="left: 40%;">🌱</div>
+        <div class="tree" id="tree3" style="left: 70%;">🌱</div>
+    </div>
+
+    <!-- Streak -->
+    <div class="streak-flame" id="streakFlame">
+        <span class="flame" id="flame1">🔥</span>
+        <span class="flame" id="flame2">🔥</span>
+        <span class="flame" id="flame3">🔥</span>
+        <span class="flame" id="flame4">🔥</span>
+        <span class="flame" id="flame5">🔥</span>
+        <span class="flame" id="flame6">🔥</span>
+        <span class="flame" id="flame7">🔥</span>
+        <span style="margin-left: 10px; font-size: 16px;" id="streakText">0 day streak</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-bar">
+        <div class="stat">
+            <div class="stat-value" id="currentAmount">0</div>
+            <div class="stat-label">ml today</div>
+        </div>
+        <div class="progress-ring-container">
+            <svg class="progress-ring" width="80" height="80">
+                <circle cx="40" cy="40" r="35" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                <circle class="progress-ring-circle" id="progressCircle" cx="40" cy="40" r="35" fill="none" stroke="#38bdf8" stroke-width="8" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="220"/>
+            </svg>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; font-weight: bold;" id="percentText">0%</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="targetAmount">2800</div>
+            <div class="stat-label">ml goal</div>
+        </div>
+    </div>
+
+    <!-- Main Button -->
+    <button class="drink-btn pulse" id="drinkBtn" onclick="addWater(250)">
+        💧 Drink 250ml
+    </button>
+
+    <!-- Quick Add -->
+    <div class="quick-add">
+        <button class="quick-btn" onclick="addWater(150)">Small<br>150ml</button>
+        <button class="quick-btn" onclick="addWater(250)">Glass<br>250ml</button>
+        <button class="quick-btn" onclick="addWater(500)">Bottle<br>500ml</button>
+        <button class="quick-btn" onclick="addWater(1000)">Liter<br>1L</button>
+    </div>
+
+    <!-- Quests -->
+    <div class="quests">
+        <div class="quest-title">🎯 Daily Quests</div>
+        <div class="quest" id="quest1">
+            <div class="quest-check" id="check1"></div>
+            <div>Morning Starter (before 9 AM)</div>
+        </div>
+        <div class="quest" id="quest2">
+            <div class="quest-check" id="check2"></div>
+            <div>Pre-Meal Ritual (before lunch)</div>
+        </div>
+        <div class="quest" id="quest3">
+            <div class="quest-check" id="check3"></div>
+            <div>Tea Balancer (match tea with water)</div>
+        </div>
+        <div class="quest" id="quest4">
+            <div class="quest-check" id="check4"></div>
+            <div>Evening Wind Down (after 8 PM)</div>
+        </div>
+    </div>
+
+    <!-- History -->
+    <div class="quests">
+        <div class="quest-title">📊 Last 7 Days</div>
+        <div class="history-bar" id="historyBar"></div>
+    </div>
+
+    <!-- Settings -->
+    <button class="quick-btn" style="width: 100%;" onclick="openSettings()">⚙️ Settings</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+    <span id="toastIcon">💧</span>
+    <span id="toastText">Keep hydrating!</span>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+        <h2>⚙️ Settings</h2>
+        <div class="setting-row">
+            <span>Daily Goal (ml)</span>
+            <input type="number" id="goalInput" value="2800" min="1000" max="5000" step="100">
+        </div>
+        <div class="setting-row">
+            <span>Wake Up Time</span>
+            <input type="time" id="wakeTime" value="07:15">
+        </div>
+        <div class="setting-row">
+            <span>Bed Time</span>
+            <input type="time" id="bedTime" value="01:00">
+        </div>
+        <div class="setting-row">
+            <span>Reminders</span>
+            <button class="quick-btn" style="width: auto;" onclick="toggleReminders()" id="reminderToggle">ON</button>
+        </div>
+        <button class="close-btn" onclick="saveSettings()">Save & Close</button>
+    </div>
+</div>
+
+<!-- Install Button -->
+<button class="install-btn" id="installBtn" onclick="installApp()">📲 Install AquaRealm</button>
+
+<script>
+// ==================== STATE ====================
+const state = {
+    current: 0,
+    goal: 2800,
+    history: [],
+    streak: 0,
+    lastDrinkDate: null,
+    quests: { morning: false, lunch: false, tea: false, evening: false },
+    reminders: true,
+    wakeTime: '07:15',
+    bedTime: '01:00'
+};
+
+const creatureStates = {
+    thirsty: { emoji: '🥵', class: 'thirsty' },
+    sad: { emoji: '😢', class: '' },
+    neutral: { emoji: '🦎', class: '' },
+    happy: { emoji: '😊', class: 'happy' },
+    ecstatic: { emoji: '🤩', class: 'ecstatic' }
+};
+
+// ==================== INIT ====================
+function init() {
+    loadState();
+    updateUI();
+    renderHistory();
+    checkNewDay();
+    checkQuests();
+    setupNotifications();
+    
+    // Check for install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredPrompt = e;
+        document.getElementById('installBtn').classList.add('show');
+    });
+}
+
+function loadState() {
+    const saved = localStorage.getItem('aquarealm');
+    if (saved) {
+        const parsed = JSON.parse(saved);
+        Object.assign(state, parsed);
+    }
+    
+    // Ensure history has 7 days
+    while (state.history.length < 7) {
+        state.history.unshift({ date: getDateOffset(-state.history.length - 1), amount: Math.floor(Math.random() * 2000 + 1000) });
+    }
+}
+
+function saveState() {
+    localStorage.setItem('aquarealm', JSON.stringify(state));
+}
+
+function getDateOffset(days) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split('T')[0];
+}
+
+function getToday() {
+    return new Date().toISOString().split('T')[0];
+}
+
+// ==================== WATER LOGGING ====================
+function addWater(amount) {
+    const now = new Date();
+    const hour = now.getHours();
+    
+    state.current += amount;
+    
+    // Check quests
+    if (hour < 9) state.quests.morning = true;
+    if (hour >= 11 && hour <= 14) state.quests.lunch = true;
+    if (hour >= 18 && hour <= 22) state.quests.evening = true;
+    
+    // Tea balancer (rough approximation - if drinking in afternoon)
+    if (hour >= 14 && hour <= 18) state.quests.tea = true;
+    
+    state.lastDrinkDate = now.toISOString();
+    
+    // Visual effects
+    createParticles();
+    showToast(`+${amount}ml! ${getEncouragement()}`);
+    
+    // Check milestones
+    const prevPercent = (state.current - amount) / state.goal;
+    const newPercent = state.current / state.goal;
+    
+    if (prevPercent < 0.25 && newPercent >= 0.25) {
+        showToast('🌱 First quarter! Your river is flowing!');
+    } else if (prevPercent < 0.5 && newPercent >= 0.5) {
+        showToast('🌳 Halfway! Trees are growing!');
+        document.getElementById('tree1').textContent = '🌳';
+        document.getElementById('tree1').classList.add('bloom');
+    } else if (prevPercent < 0.75 && newPercent >= 0.75) {
+        showToast('🌸 Almost there! Your realm is thriving!');
+        document.getElementById('tree2').textContent = '🌸';
+        document.getElementById('tree2').classList.add('bloom');
+    } else if (prevPercent < 1 && newPercent >= 1) {
+        showToast('🎉 GOAL REACHED! Your realm is magnificent!');
+        document.getElementById('tree3').textContent = '🏆';
+        document.getElementById('tree3').classList.add('bloom');
+        createConfetti();
+        updateStreak();
+    }
+    
+    saveState();
+    updateUI();
+    checkQuests();
+}
+
+function getEncouragement() {
+    const msgs = [
+        'Great start!', 'Keep it flowing!', 'Your body thanks you!',
+        'Hydration hero!', 'Splash-tastic!', 'Water warrior!',
+        'Drip drip hooray!', 'Liquid gold!', 'Thirst quenched!'
+    ];
+    return msgs[Math.floor(Math.random() * msgs.length)];
+}
+
+// ==================== UI UPDATES ====================
+function updateUI() {
+    const percent = Math.min(state.current / state.goal, 1);
+    const percentDisplay = Math.round((state.current / state.goal) * 100);
+    
+    // Update numbers
+    document.getElementById('currentAmount').textContent = state.current;
+    document.getElementById('percentText').textContent = percentDisplay + '%';
+    
+    // Update progress ring
+    const circle = document.getElementById('progressCircle');
+    const circumference = 2 * Math.PI * 35;
+    circle.style.strokeDashoffset = circumference - (percent * circumference);
+    
+    // Update river
+    document.getElementById('riverWater').style.height = (percent * 100) + '%';
+    
+    // Update creature
+    updateCreature(percent);
+    
+    // Update streak
+    document.getElementById('streakText').textContent = state.streak + ' day streak';
+    updateFlames();
+}
+
+function updateCreature(percent) {
+    const creature = document.getElementById('creature');
+    let state_key = 'neutral';
+    
+    if (percent === 0) state_key = 'thirsty';
+    else if (percent < 0.3) state_key = 'sad';
+    else if (percent < 0.6) state_key = 'neutral';
+    else if (percent < 1) state_key = 'happy';
+    else state_key = 'ecstatic';
+    
+    const config = creatureStates[state_key];
+    creature.textContent = config.emoji;
+    creature.className = 'creature ' + config.class;
+}
+
+function updateFlames() {
+    const flames = Math.min(Math.floor(state.streak / 7) + 1, 7);
+    for (let i = 1; i <= 7; i++) {
+        const flame = document.getElementById('flame' + i);
+        if (i <= flames && state.streak > 0) {
+            flame.classList.add('lit');
+        } else {
+            flame.classList.remove('lit');
+        }
+    }
+}
+
+function checkQuests() {
+    const now = new Date();
+    const hour = now.getHours();
+    
+    // Morning
+    if (state.quests.morning) {
+        document.getElementById('quest1').classList.add('complete');
+        document.getElementById('check1').textContent = '✓';
+    }
+    
+    // Lunch (11 AM - 2 PM window)
+    if (state.quests.lunch || (hour >= 11 && hour <= 14 && state.current > 0)) {
+        if (hour >= 11 && hour <= 14 && state.current > 500) state.quests.lunch = true;
+    }
+    if (state.quests.lunch) {
+        document.getElementById('quest2').classList.add('complete');
+        document.getElementById('check2').textContent = '✓';
+    }
+    
+    // Tea balancer (simplified - just check if drank in afternoon)
+    if (state.quests.tea || (hour >= 14 && state.current > 1000)) {
+        if (hour >= 14 && state.current > 1000) state.quests.tea = true;
+    }
+    if (state.quests.tea) {
+        document.getElementById('quest3').classList.add('complete');
+        document.getElementById('check3').textContent = '✓';
+    }
+    
+    // Evening
+    if (state.quests.evening) {
+        document.getElementById('quest4').classList.add('complete');
+        document.getElementById('check4').textContent = '✓';
+    }
+    
+    saveState();
+}
+
+function renderHistory() {
+    const bar = document.getElementById('historyBar');
+    bar.innerHTML = '';
+    
+    state.history.slice(-7).forEach((day, idx) => {
+        const isToday = idx === state.history.length - 1;
+        const percent = Math.min(day.amount / state.goal, 1);
+        const dayName = new Date(day.date).toLocaleDateString('en', { weekday: 'short' });
+        
+        const pill = document.createElement('div');
+        pill.className = 'day-pill';
+        pill.innerHTML = `
+            <div class="day-fill" style="height: ${percent * 100}%"></div>
+            <div class="day-label">${dayName}</div>
+            <div class="day-value">${Math.round(percent * 100)}%</div>
+        `;
+        if (isToday) pill.style.border = '2px solid #38bdf8';
+        bar.appendChild(pill);
+    });
+}
+
+// ==================== STREAK LOGIC ====================
+function checkNewDay() {
+    const today = getToday();
+    const lastEntry = state.history[state.history.length - 1];
+    
+    if (lastEntry && lastEntry.date !== today) {
+        // New day! Check if yesterday was successful
+        const yesterday = state.history[state.history.length - 2];
+        if (yesterday && yesterday.amount >= state.goal * 0.8) {
+            state.streak++;
+            showToast(`🔥 Streak continued! ${state.streak} days!`);
+        } else if (yesterday) {
+            state.streak = 0;
+            showToast('Streak reset. New day, new start! 💪');
+        }
+        
+        // Add today
+        state.history.push({ date: today, amount: 0 });
+        if (state.history.length > 7) state.history.shift();
+        
+        // Reset daily stats
+        state.current = 0;
+        state.quests = { morning: false, lunch: false, tea: false, evening: false };
+        
+        // Reset trees
+        document.getElementById('tree1').textContent = '🌱';
+        document.getElementById('tree1').classList.remove('bloom');
+        document.getElementById('tree2').textContent = '🌱';
+        document.getElementById('tree2').classList.remove('bloom');
+        document.getElementById('tree3').textContent = '🌱';
+        document.getElementById('tree3').classList.remove('bloom');
+        
+        saveState();
+    } else if (!lastEntry) {
+        state.history.push({ date: today, amount: 0 });
+        saveState();
+    }
+}
+
+function updateStreak() {
+    // Called when goal reached
+    const today = getToday();
+    const entry = state.history.find(h => h.date === today);
+    if (entry) entry.amount = state.current;
+    saveState();
+}
+
+// ==================== NOTIFICATIONS ====================
+function setupNotifications() {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        scheduleReminders();
+    }
+    
+    // Check every minute for reminder time
+    setInterval(() => {
+        if (state.reminders) checkReminderTime();
+    }, 60000);
+}
+
+function checkReminderTime() {
+    const now = new Date();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+    
+    // Reminder times: 8:30, 10:00, 11:30, 13:00, 14:30, 16:00, 17:30, 19:30, 21:00, 22:30
+    const reminderTimes = [
+        [8, 30], [10, 0], [11, 30], [13, 0], [14, 30],
+        [16, 0], [17, 30], [19, 30], [21, 0], [22, 30]
+    ];
+    
+    reminderTimes.forEach(([h, m]) => {
+        if (hour === h && minute === m) {
+            showNotification();
+        }
+    });
+}
+
+function showNotification() {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        const messages = [
+            '💧 Your axolotl is thirsty! Drink some water!',
+            '🌊 The river is drying up! Hydrate now!',
+            '🦎 Your creature needs water to grow!',
+            '💦 Time for a hydration break!'
+        ];
+        const msg = messages[Math.floor(Math.random() * messages.length)];
+        
+        new Notification('AquaRealm', {
+            body: msg,
+            icon: '💧',
+            badge: '💧'
+        });
+    }
+}
+
+function requestNotificationPermission() {
+    if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                showToast('🔔 Reminders enabled!');
+                scheduleReminders();
+            }
+        });
+    }
+}
+
+function scheduleReminders() {
+    // Immediate test
+    setTimeout(() => {
+        showToast('🔔 Reminders are active!');
+    }, 2000);
+}
+
+// ==================== VISUAL EFFECTS ====================
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastText').textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function createParticles() {
+    const emojis = ['💧', '✨', '💦', '🌊'];
+    for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            particle.style.left = (Math.random() * 80 + 10) + '%';
+            particle.style.top = '50%';
+            particle.style.fontSize = (Math.random() * 20 + 20) + 'px';
+            document.body.appendChild(particle);
+            setTimeout(() => particle.remove(), 2000);
+        }, i * 100);
+    }
+}
+
+function createConfetti() {
+    const colors = ['#38bdf8', '#22c55e', '#a855f7', '#f59e0b', '#ef4444'];
+    for (let i = 0; i < 30; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animationDelay = Math.random() * 2 + 's';
+        confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+        document.body.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 3000);
+    }
+}
+
+// ==================== SETTINGS ====================
+function openSettings() {
+    document.getElementById('settingsModal').classList.add('active');
+    document.getElementById('goalInput').value = state.goal;
+    document.getElementById('wakeTime').value = state.wakeTime;
+    document.getElementById('bedTime').value = state.bedTime;
+    document.getElementById('reminderToggle').textContent = state.reminders ? 'ON' : 'OFF';
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').classList.remove('active');
+}
+
+function saveSettings() {
+    state.goal = parseInt(document.getElementById('goalInput').value);
+    state.wakeTime = document.getElementById('wakeTime').value;
+    state.bedTime = document.getElementById('bedTime').value;
+    saveState();
+    updateUI();
+    closeSettings();
+    showToast('Settings saved!');
+}
+
+function toggleReminders() {
+    state.reminders = !state.reminders;
+    document.getElementById('reminderToggle').textContent = state.reminders ? 'ON' : 'OFF';
+    if (state.reminders) requestNotificationPermission();
+}
+
+// ==================== INSTALL ====================
+function installApp() {
+    if (window.deferredPrompt) {
+        window.deferredPrompt.prompt();
+        window.deferredPrompt.userChoice.then(choice => {
+            if (choice.outcome === 'accepted') {
+                showToast('AquaRealm installed! 🎉');
+                document.getElementById('installBtn').classList.remove('show');
+            }
+            window.deferredPrompt = null;
+        });
+    }
+}
+
+// ==================== START ====================
+window.onload = init;
+
+// Request notification permission on first interaction
+document.addEventListener('click', () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+        requestNotificationPermission();
+    }
+}, { once: true });
+</script>
+
+</body>
+</html>

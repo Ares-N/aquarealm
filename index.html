@@ -124,7 +124,7 @@
             height: 20px;
             background: rgba(255,255,255,0.3);
             border-radius: 50%;
-            animation: wave 3s infinite linear;
+            animation: wave 6s infinite linear;
         }
 
         @keyframes wave {
@@ -309,7 +309,7 @@
             border-radius: 15px;
             border: 1px solid rgba(56, 189, 248, 0.3);
             backdrop-filter: blur(10px);
-            z-index: 1000;
+            z-index: 10000;
             transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             display: flex;
             align-items: center;
@@ -396,8 +396,8 @@
         }
 
         .day-pill {
-            min-width: 40px;
-            height: 60px;
+            min-width: 36px;
+    height: 50px;
             border-radius: 10px;
             background: rgba(255,255,255,0.1);
             display: flex;
@@ -590,6 +590,10 @@
             <span>Reminders</span>
             <button class="quick-btn" style="width: auto;" onclick="toggleReminders()" id="reminderToggle">ON</button>
         </div>
+        <div class="setting-row">
+    <span>Reset Today's Data</span>
+    <button class="quick-btn" style="width: auto; background: #ef4444;" onclick="resetToday()">Reset</button>
+</div>
         <button class="close-btn" onclick="saveSettings()">Save & Close</button>
     </div>
 </div>
@@ -611,12 +615,22 @@ const state = {
     bedTime: '01:00'
 };
 
+function resetToday() {
+    if (confirm('Reset today\'s progress?')) {
+        state.current = 0;
+        state.quests = { morning: false, lunch: false, tea: false, evening: false };
+        saveState();
+        updateUI();
+        showToast('Day reset! Start fresh! 🌱');
+    }
+}
+    
 const creatureStates = {
-    thirsty: { emoji: '🥵', class: 'thirsty' },
-    sad: { emoji: '😢', class: '' },
-    neutral: { emoji: '🦎', class: '' },
-    happy: { emoji: '😊', class: 'happy' },
-    ecstatic: { emoji: '🤩', class: 'ecstatic' }
+    thirsty: { emoji: '💀', class: 'thirsty' },
+    sad: { emoji: '😰', class: '' },
+    neutral: { emoji: '🐢', class: '' },
+    happy: { emoji: '😄', class: 'happy' },
+    ecstatic: { emoji: '🌟', class: 'ecstatic' }
 };
 
 // ==================== INIT ====================

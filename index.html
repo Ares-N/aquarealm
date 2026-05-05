@@ -28,22 +28,67 @@
 
         /* Sky & Clouds */
         .sky {
-            position: relative;
-            height: 200px;
-            overflow: hidden;
-            border-radius: 20px 20px 0 0;
-        }
+            <div class="sky" id="sky">
+    <div class="celestial-body" id="celestial">☀️</div>
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+</div>
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+    border-radius: 20px 20px 0 0;
+    background: linear-gradient(180deg, 
+        #38bdf8 0%, 
+        #0ea5e9 40%, 
+        transparent 100%
+    );
+}
+        .celestial-body {
+    position: absolute;
+    top: 25px;
+    right: 30px;
+    font-size: 40px;
+    filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.6));
+    animation: gentle-pulse 4s infinite ease-in-out;
+    z-index: 2;
+}
 
-        .cloud {
-            position: absolute;
-            background: rgba(255,255,255,0.1);
-            border-radius: 50px;
-            animation: float 20s infinite ease-in-out;
-        }
+@keyframes gentle-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.1); opacity: 1; }
+}
 
-        .cloud:nth-child(1) { width: 80px; height: 40px; top: 30px; left: 10%; animation-delay: 0s; }
-        .cloud:nth-child(2) { width: 60px; height: 30px; top: 60px; left: 60%; animation-delay: -5s; }
-        .cloud:nth-child(3) { width: 100px; height: 50px; top: 20px; left: 40%; animation-delay: -10s; }
+.cloud {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.25); /* increased from 0.1 */
+    border-radius: 100px;
+    filter: blur(1px); /* soft edges */
+}
+
+.cloud:nth-child(1) { 
+    width: 100px; 
+    height: 40px; 
+    top: 30px; 
+    left: 10%; 
+    animation-delay: 0s; 
+}
+
+.cloud:nth-child(2) { 
+    width: 70px; 
+    height: 35px; 
+    top: 70px; 
+    left: 55%; 
+    animation-delay: -5s; 
+}
+
+.cloud:nth-child(3) { 
+    width: 120px; 
+    height: 45px; 
+    top: 20px; 
+    left: 35%; 
+    animation-delay: -10s; 
+}
 
         @keyframes float {
             0%, 100% { transform: translateX(0); }
@@ -624,6 +669,22 @@ function resetToday() {
         showToast('Day reset! Start fresh! 🌱');
     }
 }
+    function updateTimeOfDay() {
+    const hour = new Date().getHours();
+    const celestial = document.getElementById('celestial');
+    const sky = document.getElementById('sky');
+    
+    if (hour >= 6 && hour < 18) {
+        // Day
+        celestial.textContent = '☀️';
+        sky.style.background = 'linear-gradient(180deg, #38bdf8 0%, #0ea5e9 40%, transparent 100%)';
+    } else {
+        // Night
+        celestial.textContent = '🌙';
+        sky.style.background = 'linear-gradient(180deg, #1e1b4b 0%, #312e81 40%, transparent 100%)';
+        celestial.style.filter = 'drop-shadow(0 0 15px rgba(255,255,255,0.4))';
+    }
+}
     
 const creatureStates = {
     thirsty: { emoji: '💀', class: 'thirsty' },
@@ -637,6 +698,7 @@ const creatureStates = {
 function init() {
     loadState();
     updateUI();
+    updateTimeOfDay()
     renderHistory();
     checkNewDay();
     checkQuests();

@@ -34,6 +34,7 @@
     <div class="cloud"></div>
     <div class="cloud"></div>
 </div>
+            <div class="sun" id="sun">☀️</div>
     position: relative;
     height: 200px;
     overflow: hidden;
@@ -58,36 +59,74 @@
     0%, 100% { transform: scale(1); opacity: 0.9; }
     50% { transform: scale(1.1); opacity: 1; }
 }
+        .sun {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    font-size: 45px;
+    filter: drop-shadow(0 0 25px rgba(251, 191, 36, 0.8));
+    animation: sun-pulse 5s infinite ease-in-out;
+    z-index: 5;
+}
+
+@keyframes sun-pulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.6)); }
+    50% { transform: scale(1.15); filter: drop-shadow(0 0 35px rgba(251, 191, 36, 0.9)); }
+}
 
 .cloud {
     position: absolute;
-    background: rgba(255, 255, 255, 0.25); /* increased from 0.1 */
-    border-radius: 100px;
-    filter: blur(1px); /* soft edges */
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 50px;
+    filter: blur(2px);
 }
 
+/* Make clouds puffy by adding pseudo-elements */
+.cloud::before,
+.cloud::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+}
+
+.cloud::before {
+    width: 50%;
+    height: 100%;
+    top: -40%;
+    left: 15%;
+}
+
+.cloud::after {
+    width: 40%;
+    height: 80%;
+    top: -30%;
+    right: 15%;
+}
+
+/* Individual cloud sizing */
 .cloud:nth-child(1) { 
     width: 100px; 
-    height: 40px; 
-    top: 30px; 
-    left: 10%; 
+    height: 35px; 
+    top: 40px; 
+    left: 15%; 
     animation-delay: 0s; 
 }
 
 .cloud:nth-child(2) { 
-    width: 70px; 
-    height: 35px; 
-    top: 70px; 
-    left: 55%; 
-    animation-delay: -5s; 
+    width: 80px; 
+    height: 30px; 
+    top: 80px; 
+    left: 60%; 
+    animation-delay: -7s; 
 }
 
 .cloud:nth-child(3) { 
     width: 120px; 
-    height: 45px; 
-    top: 20px; 
-    left: 35%; 
-    animation-delay: -10s; 
+    height: 40px; 
+    top: 25px; 
+    left: 40%; 
+    animation-delay: -14s; 
 }
 
         @keyframes float {

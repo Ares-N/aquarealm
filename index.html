@@ -85,7 +85,6 @@
             border-radius: 50%;
         }
 
-        /* Cloud 1 */
         .cloud-1 {
             width: 80px;
             height: 30px;
@@ -106,7 +105,6 @@
             right: 10px;
         }
 
-        /* Cloud 2 */
         .cloud-2 {
             width: 60px;
             height: 25px;
@@ -127,7 +125,6 @@
             right: 8px;
         }
 
-        /* Cloud 3 */
         .cloud-3 {
             width: 100px;
             height: 35px;
@@ -166,7 +163,6 @@
             100% { transform: translateX(-10px); }
         }
 
-        /* Night clouds - darker */
         .sky.night .cloud,
         .sky.night .cloud::before,
         .sky.night .cloud::after {
@@ -351,52 +347,186 @@
             font-weight: 700;
         }
 
-        /* ==================== BUTTONS ==================== */
-        .drink-btn {
-            width: 100%;
-            padding: 18px;
-            font-size: 18px;
-            font-weight: 700;
-            border: none;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #0ea5e9, #0284c7);
-            color: white;
-            cursor: pointer;
-            transition: all 0.2s ease;
+        /* ==================== DRINK PICKER ==================== */
+        .drink-section {
             margin-bottom: 12px;
-            box-shadow: 0 8px 24px rgba(14, 165, 233, 0.25);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
         }
 
-        .drink-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(14, 165, 233, 0.35); }
-        .drink-btn:active { transform: translateY(0) scale(0.98); }
+        .section-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            opacity: 0.6;
+            margin-bottom: 8px;
+            padding-left: 4px;
+        }
 
-        .quick-add {
+        .drink-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
+            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
-        .quick-btn {
-            padding: 12px 4px;
-            border: 1.5px solid rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.06);
+        .drink-option {
+            padding: 10px 4px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
             color: white;
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 12px;
-            line-height: 1.4;
+            font-size: 11px;
+            text-align: center;
+            line-height: 1.3;
         }
 
-        .quick-btn:hover { 
-            background: rgba(255, 255, 255, 0.12); 
-            border-color: rgba(56, 189, 248, 0.4); 
+        .drink-option .drink-icon {
+            font-size: 22px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .drink-option .drink-name {
+            font-weight: 500;
+        }
+
+        .drink-option .water-pct {
+            font-size: 9px;
+            opacity: 0.6;
+            margin-top: 2px;
+        }
+
+        .drink-option:hover {
+            background: rgba(255, 255, 255, 0.1);
             transform: translateY(-1px);
+        }
+
+        .drink-option.selected {
+            border-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.15);
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+        }
+
+        /* ==================== AMOUNT INPUT ==================== */
+        .amount-section {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            align-items: stretch;
+        }
+
+        .amount-input-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 0 12px;
+            transition: all 0.2s;
+        }
+
+        .amount-input-wrapper:focus-within {
+            border-color: #38bdf8;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .amount-input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            width: 100%;
+            padding: 12px 0;
+            outline: none;
+        }
+
+        .amount-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 400;
+        }
+
+        .amount-unit {
+            font-size: 14px;
+            opacity: 0.6;
+            margin-left: 4px;
+        }
+
+        .add-btn {
+            padding: 0 24px;
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3);
+        }
+
+        .add-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+        }
+
+        .add-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        /* ==================== QUICK AMOUNTS ==================== */
+        .quick-amounts {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .quick-amount {
+            padding: 8px 14px;
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .quick-amount:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+
+        .quick-amount.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: #38bdf8;
+        }
+
+        /* ==================== WATER INFO ==================== */
+        .water-info {
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .water-info-label {
+            opacity: 0.8;
+        }
+
+        .water-info-value {
+            font-weight: 700;
+            color: #38bdf8;
         }
 
         /* ==================== QUESTS ==================== */
@@ -755,17 +885,76 @@
         </div>
     </div>
 
-    <!-- Main Button -->
-    <button class="drink-btn pulse" id="drinkBtn" onclick="addWater(250)">
-        💧 Drink 250ml
-    </button>
+    <!-- Drink Type Picker -->
+    <div class="drink-section">
+        <div class="section-label">Select Drink Type</div>
+        <div class="drink-grid" id="drinkGrid">
+            <div class="drink-option selected" data-type="water" data-pct="100" onclick="selectDrink(this)">
+                <span class="drink-icon">💧</span>
+                <span class="drink-name">Water</span>
+                <span class="water-pct">100% water</span>
+            </div>
+            <div class="drink-option" data-type="tea" data-pct="50" onclick="selectDrink(this)">
+                <span class="drink-icon">🍵</span>
+                <span class="drink-name">Tea</span>
+                <span class="water-pct">~50% water</span>
+            </div>
+            <div class="drink-option" data-type="coffee" data-pct="98" onclick="selectDrink(this)">
+                <span class="drink-icon">☕</span>
+                <span class="drink-name">Coffee</span>
+                <span class="water-pct">~98% water</span>
+            </div>
+            <div class="drink-option" data-type="milk" data-pct="87" onclick="selectDrink(this)">
+                <span class="drink-icon">🥛</span>
+                <span class="drink-name">Milk</span>
+                <span class="water-pct">~87% water</span>
+            </div>
+            <div class="drink-option" data-type="juice" data-pct="85" onclick="selectDrink(this)">
+                <span class="drink-icon">🧃</span>
+                <span class="drink-name">Juice</span>
+                <span class="water-pct">~85% water</span>
+            </div>
+            <div class="drink-option" data-type="soda" data-pct="90" onclick="selectDrink(this)">
+                <span class="drink-icon">🥤</span>
+                <span class="drink-name">Soda</span>
+                <span class="water-pct">~90% water</span>
+            </div>
+            <div class="drink-option" data-type="coconut" data-pct="95" onclick="selectDrink(this)">
+                <span class="drink-icon">🥥</span>
+                <span class="drink-name">Coconut</span>
+                <span class="water-pct">~95% water</span>
+            </div>
+            <div class="drink-option" data-type="soup" data-pct="92" onclick="selectDrink(this)">
+                <span class="drink-icon">🍲</span>
+                <span class="drink-name">Soup</span>
+                <span class="water-pct">~92% water</span>
+            </div>
+        </div>
+    </div>
 
-    <!-- Quick Add -->
-    <div class="quick-add">
-        <button class="quick-btn" onclick="addWater(150)">Small<br><strong>150ml</strong></button>
-        <button class="quick-btn" onclick="addWater(250)">Glass<br><strong>250ml</strong></button>
-        <button class="quick-btn" onclick="addWater(500)">Bottle<br><strong>500ml</strong></button>
-        <button class="quick-btn" onclick="addWater(1000)">Liter<br><strong>1L</strong></button>
+    <!-- Amount Input -->
+    <div class="section-label">Amount</div>
+    <div class="amount-section">
+        <div class="amount-input-wrapper">
+            <input type="number" class="amount-input" id="amountInput" placeholder="250" value="250" min="1" max="2000">
+            <span class="amount-unit">ml</span>
+        </div>
+        <button class="add-btn" onclick="logDrink()">Add</button>
+    </div>
+
+    <!-- Quick Amounts -->
+    <div class="quick-amounts" id="quickAmounts">
+        <div class="quick-amount" onclick="setAmount(150)">150ml</div>
+        <div class="quick-amount active" onclick="setAmount(250)">250ml</div>
+        <div class="quick-amount" onclick="setAmount(500)">500ml</div>
+        <div class="quick-amount" onclick="setAmount(750)">750ml</div>
+        <div class="quick-amount" onclick="setAmount(1000)">1L</div>
+    </div>
+
+    <!-- Water Calculation Info -->
+    <div class="water-info" id="waterInfo">
+        <span class="water-info-label">Water contribution:</span>
+        <span class="water-info-value" id="waterValue">250ml</span>
     </div>
 
     <!-- Quests -->
@@ -796,7 +985,7 @@
     </div>
 
     <!-- Settings -->
-    <button class="quick-btn" style="width: 100%; margin-top: 4px;" onclick="openSettings()">⚙️ Settings</button>
+    <button class="quick-btn" style="width: 100%; margin-top: 4px; padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.15); color: white; cursor: pointer; font-size: 14px;" onclick="openSettings()">⚙️ Settings</button>
 </div>
 
 <!-- Toast -->
@@ -837,6 +1026,20 @@
 <button class="install-btn" id="installBtn" onclick="installApp()">📲 Install</button>
 
 <script>
+// ==================== DRINK TYPES ====================
+const drinkTypes = {
+    water: { name: 'Water', pct: 100, icon: '💧' },
+    tea: { name: 'Tea', pct: 50, icon: '🍵' },        // Half water, half milk
+    coffee: { name: 'Coffee', pct: 98, icon: '☕' },   // Black coffee is mostly water
+    milk: { name: 'Milk', pct: 87, icon: '🥛' },       // Milk is ~87% water
+    juice: { name: 'Juice', pct: 85, icon: '🧃' },     // Fruit juice
+    soda: { name: 'Soda', pct: 90, icon: '🥤' },       // Soft drinks
+    coconut: { name: 'Coconut Water', pct: 95, icon: '🥥' },
+    soup: { name: 'Soup', pct: 92, icon: '🍲' }        // Broth-based soup
+};
+
+let selectedDrink = 'water';
+
 // ==================== STATE ====================
 const state = {
     current: 0,
@@ -847,7 +1050,8 @@ const state = {
     quests: { morning: false, lunch: false, tea: false, evening: false },
     reminders: true,
     wakeTime: '07:15',
-    bedTime: '01:00'
+    bedTime: '01:00',
+    drinksToday: [] // Track individual drinks
 };
 
 const creatureStates = {
@@ -867,6 +1071,10 @@ function init() {
     checkNewDay();
     checkQuests();
     setupNotifications();
+    updateWaterInfo();
+    
+    // Input listener
+    document.getElementById('amountInput').addEventListener('input', updateWaterInfo);
     
     // Close modal on background click
     document.getElementById('settingsModal').addEventListener('click', function(e) {
@@ -910,54 +1118,75 @@ function getToday() {
     return new Date().toISOString().split('T')[0];
 }
 
-// ==================== TIME OF DAY ====================
-function updateTimeOfDay() {
-    const hour = new Date().getHours();
-    const sky = document.getElementById('sky');
-    const celestial = document.getElementById('celestial');
+// ==================== DRINK SELECTION ====================
+function selectDrink(element) {
+    // Remove selected from all
+    document.querySelectorAll('.drink-option').forEach(el => el.classList.remove('selected'));
+    // Add to clicked
+    element.classList.add('selected');
     
-    if (hour >= 6 && hour < 18) {
-        // Day
-        sky.classList.remove('night');
-        celestial.textContent = '☀️';
-        celestial.className = 'celestial-body sun-glow';
-    } else {
-        // Night
-        sky.classList.add('night');
-        celestial.textContent = '🌙';
-        celestial.className = 'celestial-body moon-glow';
-    }
+    selectedDrink = element.dataset.type;
+    updateWaterInfo();
 }
 
-// ==================== RESET ====================
-function resetToday() {
-    if (confirm('Reset today\'s progress?')) {
-        state.current = 0;
-        state.quests = { morning: false, lunch: false, tea: false, evening: false };
-        saveState();
-        updateUI();
-        showToast('Day reset! Start fresh! 🌱');
-    }
+function setAmount(amount) {
+    document.getElementById('amountInput').value = amount;
+    // Update active state on quick amounts
+    document.querySelectorAll('.quick-amount').forEach(el => {
+        el.classList.remove('active');
+        if (el.textContent.includes(amount + 'ml') || (amount === 1000 && el.textContent.includes('1L'))) {
+            el.classList.add('active');
+        }
+    });
+    updateWaterInfo();
 }
 
-// ==================== WATER LOGGING ====================
-function addWater(amount) {
+function updateWaterInfo() {
+    const amount = parseInt(document.getElementById('amountInput').value) || 0;
+    const drink = drinkTypes[selectedDrink];
+    const waterAmount = Math.round(amount * (drink.pct / 100));
+    
+    document.getElementById('waterValue').textContent = `${waterAmount}ml ${drink.icon}`;
+}
+
+function logDrink() {
+    const amount = parseInt(document.getElementById('amountInput').value) || 0;
+    if (amount <= 0) {
+        showToast('Please enter an amount! ⚠️');
+        return;
+    }
+    
+    const drink = drinkTypes[selectedDrink];
+    const waterAmount = Math.round(amount * (drink.pct / 100));
+    
     const now = new Date();
     const hour = now.getHours();
     
-    state.current += amount;
+    // Add to tracking
+    state.drinksToday.push({
+        type: selectedDrink,
+        totalAmount: amount,
+        waterAmount: waterAmount,
+        time: now.toISOString()
+    });
     
+    // Add water to daily total
+    state.current += waterAmount;
+    
+    // Check quests
     if (hour < 9) state.quests.morning = true;
     if (hour >= 11 && hour <= 14) state.quests.lunch = true;
     if (hour >= 18 && hour <= 22) state.quests.evening = true;
-    if (hour >= 14 && hour <= 18) state.quests.tea = true;
+    if (selectedDrink === 'tea' || selectedDrink === 'coffee') state.quests.tea = true;
     
     state.lastDrinkDate = now.toISOString();
     
+    // Visual effects
     createParticles();
-    showToast(`+${amount}ml! ${getEncouragement()}`);
+    showToast(`${drink.icon} +${amount}ml ${drink.name} = ${waterAmount}ml water!`);
     
-    const prevPercent = (state.current - amount) / state.goal;
+    // Check milestones
+    const prevPercent = (state.current - waterAmount) / state.goal;
     const newPercent = state.current / state.goal;
     
     if (prevPercent < 0.25 && newPercent >= 0.25) {
@@ -983,13 +1212,33 @@ function addWater(amount) {
     checkQuests();
 }
 
-function getEncouragement() {
-    const msgs = [
-        'Great start!', 'Keep it flowing!', 'Your body thanks you!',
-        'Hydration hero!', 'Splash-tastic!', 'Water warrior!',
-        'Drip drip hooray!', 'Liquid gold!', 'Thirst quenched!'
-    ];
-    return msgs[Math.floor(Math.random() * msgs.length)];
+// ==================== TIME OF DAY ====================
+function updateTimeOfDay() {
+    const hour = new Date().getHours();
+    const sky = document.getElementById('sky');
+    const celestial = document.getElementById('celestial');
+    
+    if (hour >= 6 && hour < 18) {
+        sky.classList.remove('night');
+        celestial.textContent = '☀️';
+        celestial.className = 'celestial-body sun-glow';
+    } else {
+        sky.classList.add('night');
+        celestial.textContent = '🌙';
+        celestial.className = 'celestial-body moon-glow';
+    }
+}
+
+// ==================== RESET ====================
+function resetToday() {
+    if (confirm('Reset today\'s progress?')) {
+        state.current = 0;
+        state.quests = { morning: false, lunch: false, tea: false, evening: false };
+        state.drinksToday = [];
+        saveState();
+        updateUI();
+        showToast('Day reset! Start fresh! 🌱');
+    }
 }
 
 // ==================== UI UPDATES ====================
@@ -1000,7 +1249,7 @@ function updateUI() {
     document.getElementById('currentAmount').textContent = state.current;
     document.getElementById('percentText').textContent = percentDisplay + '%';
     
-    // Progress ring - circumference = 2 * PI * 30 ≈ 188.5
+    // Progress ring
     const circumference = 188.5;
     const offset = circumference - (percent * circumference);
     document.getElementById('progressCircle').style.strokeDashoffset = offset;
@@ -1061,8 +1310,8 @@ function checkQuests() {
         document.getElementById('check2').textContent = '✓';
     }
     
-    if (state.quests.tea || (hour >= 14 && state.current > 1000)) {
-        if (hour >= 14 && state.current > 1000) state.quests.tea = true;
+    if (state.quests.tea || (state.drinksToday.some(d => d.type === 'tea' || d.type === 'coffee'))) {
+        state.quests.tea = true;
     }
     if (state.quests.tea) {
         document.getElementById('quest3').classList.add('complete');
@@ -1118,6 +1367,7 @@ function checkNewDay() {
         
         state.current = 0;
         state.quests = { morning: false, lunch: false, tea: false, evening: false };
+        state.drinksToday = [];
         
         document.getElementById('tree1').textContent = '🌱';
         document.getElementById('tree1').classList.remove('bloom');

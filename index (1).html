@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0ea5e9">
+    <title>AquaRealm</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .realm-container {
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 40px;
+        }
+
+        /* ==================== SKY ==================== */
+        .sky {
+            position: relative;
+            height: 180px;
+            overflow: hidden;
+            border-radius: 24px 24px 0 0;
+            background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0ea5e9 100%);
+            transition: background 1s ease;
+        }
+
+        .sky.night {
+            background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 40%, #312e81 100%);
+        }
+
+        .sky.sunset {
+            background: linear-gradient(180deg, #fbbf24 0%, #f97316 40%, #dc2626 100%);
+        }
+
+        .celestial-body {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 36px;
+            z-index: 10;
+            transition: all 1s ease;
+        }
+
+        .sun-glow { filter: drop-shadow(0 0 20px rgba(251,191,36,0.8)) drop-shadow(0 0 40px rgba(251,191,36,0.4)); animation: sun-pulse 4s infinite ease-in-out; }
+        .moon-glow { filter: drop-shadow(0 0 15px rgba(255,255,255,0.6)) drop-shadow(0 0 30px rgba(255,255,255,0.2)); animation: moon-float 6s infinite ease-in-out; }
+
+        @keyframes sun-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+        @keyframes moon-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+        /* Stars */
+        .stars { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1s; }
+        .sky.night .stars { opacity: 1; }
+        .star { position: absolute; background: white; border-radius: 50%; animation: twinkle 2s infinite alternate; }
+        @keyframes twinkle { from{opacity:0.3} to{opacity:1} }
+
+        /* ==================== CLOUDS ==================== */
+        .cloud { position: absolute; background: rgba(255,255,255,0.9); border-radius: 100px; opacity: 0.8; }
+        .cloud::before, .cloud::after { content:''; position:absolute; background:rgba(255,255,255,0.9); border-radius:50%; }
+        .cloud-1 { width:80px; height:30px; top:35px; left:15%; animation:drift-1 25s infinite linear; }
+        .cloud-1::before { width:40px; height:40px; top:-20px; left:10px; }
+        .cloud-1::after { width:35px; height:35px; top:-15px; right:10px; }
+        .cloud-2 { width:60px; height:25px; top:70px; left:55%; animation:drift-2 30s infinite linear; }
+        .cloud-2::before { width:30px; height:30px; top:-15px; left:8px; }
+        .cloud-2::after { width:25px; height:25px; top:-12px; right:8px; }
+        .cloud-3 { width:100px; height:35px; top:25px; left:35%; animation:drift-3 35s infinite linear; }
+        .cloud-3::before { width:50px; height:50px; top:-25px; left:15px; }
+        .cloud-3::after { width:40px; height:40px; top:-20px; right:15px; }
+
+        @keyframes drift-1 { 0%{transform:translateX(-20px)} 50%{transform:translateX(20px)} 100%{transform:translateX(-20px)} }
+        @keyframes drift-2 { 0%{transform:translateX(15px)} 50%{transform:translateX(-15px)} 100%{transform:translateX(15px)} }
+        @keyframes drift-3 { 0%{transform:translateX(-10px)} 50%{transform:translateX(25px)} 100%{transform:translateX(-10px)} }
+        .sky.night .cloud,.sky.night .cloud::before,.sky.night .cloud::after { background:rgba(148,163,184,0.3); }
+
+        /* ==================== XP BAR (in sky) ==================== */
+        .level-badge {
+            position: absolute;
+            top: 12px;
+            left: 14px;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .level-label {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(8px);
+            padding: 3px 8px;
+            border-radius: 20px;
+            line-height: 1;
+        }
+
+        .xp-bar-wrap {
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            height: 6px;
+            width: 80px;
+            overflow: hidden;
+        }
+
+        .xp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
+            border-radius: 20px;
+            transition: width 0.5s ease;
+        }
+
+        /* ==================== CREATURE ==================== */
+        .creature-container {
+            position: relative;
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: -20px 0 4px;
+            z-index: 5;
+            gap: 2px;
+        }
+
+        .creature {
+            font-size: 60px;
+            line-height: 1;
+            transition: all 0.6s cubic-bezier(0.34,1.56,0.64,1);
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+            animation: creature-breathe 3s infinite ease-in-out;
+            cursor: pointer;
+        }
+
+        .creature.happy { filter: drop-shadow(0 0 20px rgba(34,197,94,0.5)) drop-shadow(0 4px 12px rgba(0,0,0,0.2)); transform:scale(1.1); }
+        .creature.thirsty { filter:drop-shadow(0 0 8px rgba(239,68,68,0.3)) drop-shadow(0 4px 12px rgba(0,0,0,0.2)); transform:scale(0.9); opacity:0.8; }
+        .creature.ecstatic { filter:drop-shadow(0 0 25px rgba(168,85,247,0.6)) drop-shadow(0 4px 12px rgba(0,0,0,0.2)); transform:scale(1.15); animation:creature-bounce 0.6s infinite alternate; }
+
+        @keyframes creature-breathe { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+        @keyframes creature-bounce { from{transform:translateY(0) scale(1.15)} to{transform:translateY(-10px) scale(1.15)} }
+
+        .creature-speech {
+            font-size: 11px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 4px 10px;
+            border-radius: 20px;
+            max-width: 220px;
+            text-align: center;
+            opacity: 0.85;
+            line-height: 1.3;
+            min-height: 22px;
+            transition: all 0.4s ease;
+        }
+
+        /* ==================== RIVER ==================== */
+        .river-container {
+            position: relative;
+            height: 100px;
+            background: #5c3d2e;
+            border-radius: 0 0 24px 24px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .river-bed { position:absolute; bottom:0; left:0; right:0; height:100%; background:radial-gradient(ellipse at 30% 90%,rgba(139,90,43,0.4) 0%,transparent 50%),radial-gradient(ellipse at 70% 85%,rgba(160,110,60,0.3) 0%,transparent 40%); opacity:0.5; }
+
+        .river-water {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(180deg, #38bdf8 0%, #0ea5e9 50%, #0284c7 100%);
+            transition: height 0.8s cubic-bezier(0.4,0,0.2,1);
+            border-radius: 50% 50% 0 0 / 15px 15px 0 0;
+        }
+
+        .river-water::before { content:''; position:absolute; top:-2px; left:-30%; right:-30%; height:12px; background:rgba(255,255,255,0.25); border-radius:50%; animation:wave 5s infinite linear; }
+        @keyframes wave { 0%{transform:translateX(0)} 100%{transform:translateX(50%)} }
+
+        /* Fish */
+        .fish { position:absolute; z-index:4; font-size:16px; pointer-events:none; }
+        .fish.f1 { animation: swim1 8s infinite ease-in-out; bottom: 20%; }
+        .fish.f2 { animation: swim2 12s infinite ease-in-out; bottom: 45%; }
+        @keyframes swim1 { 0%{left:5%; transform:scaleX(1)} 49%{left:80%; transform:scaleX(1)} 50%{transform:scaleX(-1)} 100%{left:5%; transform:scaleX(-1)} }
+        @keyframes swim2 { 0%{left:80%; transform:scaleX(-1)} 49%{left:5%; transform:scaleX(-1)} 50%{transform:scaleX(1)} 100%{left:80%; transform:scaleX(1)} }
+
+        .tree { position:absolute; font-size:24px; bottom:8px; z-index:3; transition:all 0.5s ease; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+        .tree.bloom { filter:brightness(1.2) saturate(1.3) drop-shadow(0 2px 4px rgba(0,0,0,0.3)); transform:scale(1.15); animation:tree-sway 3s infinite ease-in-out; }
+        @keyframes tree-sway { 0%,100%{transform:scale(1.15) rotate(-2deg)} 50%{transform:scale(1.15) rotate(2deg)} }
+
+        /* ==================== STREAK ==================== */
+        .streak-flame { display:flex; align-items:center; justify-content:center; gap:6px; font-size:18px; margin-bottom:12px; padding:8px; }
+        .flame { opacity:0.25; transition:all 0.4s ease; filter:grayscale(0.3); }
+        .flame.lit { opacity:1; filter:grayscale(0) brightness(1.2); animation:flicker 1.5s infinite alternate; }
+        @keyframes flicker { from{transform:scale(1) rotate(-3deg)} to{transform:scale(1.1) rotate(3deg)} }
+
+        /* ==================== STATS BAR ==================== */
+        .stats-bar { display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.08); padding:16px 20px; border-radius:16px; margin-bottom:12px; backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.05); }
+        .stat { text-align:center; }
+        .stat-value { font-size:28px; font-weight:800; color:#38bdf8; line-height:1; }
+        .stat-label { font-size:11px; opacity:0.7; margin-top:6px; text-transform:uppercase; letter-spacing:0.5px; }
+
+        .progress-ring-container { position:relative; width:70px; height:70px; }
+        .progress-ring { transform:rotate(-90deg); }
+        .progress-ring-bg { fill:none; stroke:rgba(255,255,255,0.08); stroke-width:6; }
+        .progress-ring-circle { fill:none; stroke:#38bdf8; stroke-width:6; stroke-linecap:round; stroke-dasharray:188.5; stroke-dashoffset:188.5; transition:stroke-dashoffset 0.6s ease; }
+        .progress-text { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:13px; font-weight:700; }
+
+        /* ==================== MULTIPLIER BANNER ==================== */
+        .multiplier-banner {
+            display: none;
+            background: linear-gradient(135deg, rgba(251,191,36,0.2), rgba(245,158,11,0.15));
+            border: 1px solid rgba(251,191,36,0.4);
+            border-radius: 12px;
+            padding: 8px 14px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fbbf24;
+            text-align: center;
+            animation: shimmer 2s infinite alternate;
+        }
+        .multiplier-banner.show { display: block; }
+        @keyframes shimmer { from{opacity:0.8} to{opacity:1} }
+
+        /* ==================== LOG SECTION ==================== */
+        .log-section { margin-bottom: 12px; }
+
+        .section-label { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; opacity:0.6; margin-bottom:8px; padding-left:4px; }
+
+        /* Drink type picker */
+        .drink-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px; }
+        .drink-option { padding:10px 4px; border:2px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:white; border-radius:12px; cursor:pointer; transition:all 0.2s; font-size:11px; text-align:center; line-height:1.3; }
+        .drink-option .drink-icon { font-size:22px; display:block; margin-bottom:4px; }
+        .drink-option .drink-name { font-weight:500; }
+        .drink-option .water-pct { font-size:9px; opacity:0.6; margin-top:2px; }
+        .drink-option:hover { background:rgba(255,255,255,0.1); transform:translateY(-1px); }
+        .drink-option.selected { border-color:#38bdf8; background:rgba(56,189,248,0.15); box-shadow:0 4px 12px rgba(56,189,248,0.2); }
+
+        /* ==================== SMART LOG TABS ==================== */
+        .log-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .log-tab {
+            flex: 1;
+            padding: 9px 4px;
+            border: 1.5px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.6);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .log-tab.active {
+            border-color: #38bdf8;
+            background: rgba(56,189,248,0.12);
+            color: white;
+        }
+
+        /* Quick sip buttons */
+        .sip-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .sip-btn {
+            padding: 14px 8px;
+            border: 1.5px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: white;
+            border-radius: 14px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.18s;
+            line-height: 1.3;
+        }
+
+        .sip-btn .sip-emoji { font-size: 24px; display: block; margin-bottom: 4px; }
+        .sip-btn .sip-name { font-size: 12px; font-weight: 600; display: block; }
+        .sip-btn .sip-ml { font-size: 11px; opacity: 0.55; display: block; }
+        .sip-btn:hover { background: rgba(56,189,248,0.12); border-color: rgba(56,189,248,0.4); transform: translateY(-2px); }
+        .sip-btn:active { transform: translateY(0) scale(0.96); }
+
+        /* Bottle slider */
+        .bottle-slider-wrap {
+            background: rgba(255,255,255,0.05);
+            border: 1.5px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+
+        .bottle-slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .bottle-size-pills {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .bottle-size-pill {
+            padding: 4px 10px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(255,255,255,0.04);
+        }
+
+        .bottle-size-pill.active { border-color: #38bdf8; background: rgba(56,189,248,0.15); color: #38bdf8; font-weight: 600; }
+
+        .visual-bottle {
+            width: 60px;
+            height: 100px;
+            position: relative;
+            margin: 0 auto 10px;
+        }
+
+        .bottle-svg-wrap { width: 100%; height: 100%; position: relative; }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .amount-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .amount-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(14,165,233,0.5);
+        }
+
+        .slider-value { font-size: 16px; font-weight: 800; color: #38bdf8; min-width: 52px; text-align: right; }
+
+        /* Precise input */
+        .amount-section { display:flex; gap:8px; margin-bottom:12px; align-items:stretch; }
+        .amount-input-wrapper { flex:1; display:flex; align-items:center; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); border-radius:12px; padding:0 12px; transition:all 0.2s; }
+        .amount-input-wrapper:focus-within { border-color:#38bdf8; background:rgba(255,255,255,0.1); }
+        .amount-input { background:transparent; border:none; color:white; font-size:18px; font-weight:700; width:100%; padding:12px 0; outline:none; }
+        .amount-input::placeholder { color:rgba(255,255,255,0.4); font-weight:400; }
+        .amount-unit { font-size:14px; opacity:0.6; margin-left:4px; }
+
+        .add-btn { padding:0 24px; background:linear-gradient(135deg,#0ea5e9,#0284c7); border:none; border-radius:12px; color:white; font-weight:700; font-size:16px; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 16px rgba(14,165,233,0.3); }
+        .add-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(14,165,233,0.4); }
+        .add-btn:active { transform:translateY(0) scale(0.98); }
+
+        .quick-amounts { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+        .quick-amount { padding:8px 14px; border:1.5px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); color:white; border-radius:20px; cursor:pointer; transition:all 0.2s; font-size:13px; font-weight:500; }
+        .quick-amount:hover { background:rgba(255,255,255,0.12); border-color:rgba(56,189,248,0.4); }
+        .quick-amount.active { background:rgba(56,189,248,0.2); border-color:#38bdf8; }
+
+        .water-info { background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.2); border-radius:10px; padding:10px 14px; margin-bottom:16px; font-size:13px; display:flex; justify-content:space-between; align-items:center; }
+        .water-info-label { opacity:0.8; }
+        .water-info-value { font-weight:700; color:#38bdf8; }
+
+        /* ==================== QUESTS ==================== */
+        .quests { background:rgba(255,255,255,0.04); border-radius:16px; padding:16px; margin-bottom:12px; border:1px solid rgba(255,255,255,0.05); }
+        .quest-title { font-size:14px; font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:8px; opacity:0.9; }
+        .quest { display:flex; align-items:center; gap:12px; padding:10px 12px; background:rgba(255,255,255,0.04); border-radius:10px; margin-bottom:8px; transition:all 0.3s; font-size:13px; }
+        .quest:last-child { margin-bottom:0; }
+        .quest.complete { opacity:0.5; background:rgba(34,197,94,0.06); }
+        .quest-check { width:20px; height:20px; border-radius:50%; border:2px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:10px; transition:all 0.3s; flex-shrink:0; }
+        .quest.complete .quest-check { background:#22c55e; border-color:#22c55e; color:white; }
+        .quest-xp { font-size:10px; color:#fbbf24; font-weight:700; margin-left:auto; }
+
+        /* ==================== BADGES ==================== */
+        .badges-section { background:rgba(255,255,255,0.04); border-radius:16px; padding:16px; margin-bottom:12px; border:1px solid rgba(255,255,255,0.05); }
+        .badges-grid { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+        .badge {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.05);
+            border: 1.5px solid rgba(255,255,255,0.08);
+            font-size: 22px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            gap: 2px;
+        }
+        .badge.earned { border-color: rgba(251,191,36,0.5); background: rgba(251,191,36,0.08); }
+        .badge.earned:hover { transform: scale(1.08); }
+        .badge .badge-label { font-size: 7.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; opacity: 0.6; }
+        .badge.earned .badge-label { opacity: 0.9; color: #fbbf24; }
+        .badge:not(.earned) { opacity: 0.35; filter: grayscale(1); }
+
+        /* ==================== HISTORY ==================== */
+        .history-bar { display:flex; gap:6px; margin-top:12px; }
+        .day-pill { flex:1; min-width:0; height:55px; border-radius:10px; background:rgba(255,255,255,0.06); display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding:6px 2px; font-size:10px; position:relative; overflow:hidden; border:1px solid rgba(255,255,255,0.05); }
+        .day-fill { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(180deg,#38bdf8,#0ea5e9); border-radius:0 0 10px 10px; transition:height 0.5s ease; opacity:0.9; }
+        .day-label { z-index:1; font-size:9px; opacity:0.7; margin-bottom:2px; font-weight:600; }
+        .day-value { z-index:1; font-weight:700; font-size:11px; }
+        .day-pill.today { border:2px solid #38bdf8; background:rgba(56,189,248,0.1); }
+
+        /* ==================== TOAST ==================== */
+        .toast { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-120px); background:rgba(15,23,42,0.95); padding:14px 24px; border-radius:14px; border:1px solid rgba(56,189,248,0.2); backdrop-filter:blur(20px); z-index:10000; transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1); display:flex; align-items:center; gap:10px; font-size:14px; font-weight:500; box-shadow:0 10px 40px rgba(0,0,0,0.3); }
+        .toast.show { transform:translateX(-50%) translateY(0); }
+
+        /* XP Pop */
+        .xp-pop { position:fixed; pointer-events:none; animation:xpFloat 1.2s ease-out forwards; z-index:9999; font-size:15px; font-weight:800; color:#fbbf24; text-shadow:0 1px 4px rgba(0,0,0,0.5); }
+        @keyframes xpFloat { 0%{transform:translateY(0) scale(1);opacity:1} 100%{transform:translateY(-60px) scale(0.7);opacity:0} }
+
+        /* ==================== LEVEL UP OVERLAY ==================== */
+        .levelup-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none; align-items: center; justify-content: center;
+            z-index: 5000;
+            backdrop-filter: blur(10px);
+        }
+        .levelup-overlay.show { display: flex; }
+        .levelup-card {
+            background: linear-gradient(160deg, #1e3a5f, #0f172a);
+            border: 2px solid rgba(251,191,36,0.5);
+            border-radius: 24px;
+            padding: 36px 28px;
+            text-align: center;
+            max-width: 300px;
+            animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes popIn { from{transform:scale(0.5) rotate(-5deg);opacity:0} to{transform:scale(1) rotate(0deg);opacity:1} }
+        .levelup-emoji { font-size: 70px; margin-bottom: 12px; display: block; animation: bounce-loop 1s infinite alternate; }
+        @keyframes bounce-loop { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+        .levelup-title { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #fbbf24; margin-bottom: 6px; font-weight: 700; }
+        .levelup-name { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+        .levelup-desc { font-size: 13px; opacity: 0.7; margin-bottom: 20px; }
+        .levelup-close { padding: 12px 32px; background: linear-gradient(135deg,#fbbf24,#f59e0b); border: none; border-radius: 20px; color: #0f172a; font-weight: 800; font-size: 14px; cursor: pointer; }
+
+        /* ==================== MODAL ==================== */
+        .modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:2000; backdrop-filter:blur(8px); padding:20px; }
+        .modal-overlay.active { display:flex; }
+        .modal { background:linear-gradient(180deg,#1e3a5f,#0f172a); padding:24px; border-radius:20px; width:100%; max-width:340px; border:1px solid rgba(56,189,248,0.15); }
+        .modal h2 { margin-bottom:20px; font-size:18px; display:flex; align-items:center; gap:8px; }
+        .setting-row { display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.08); }
+        .setting-row:last-child { border-bottom:none; }
+        .setting-label { font-size:14px; opacity:0.9; }
+        input[type="number"], input[type="time"] { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:white; padding:8px 12px; border-radius:8px; width:90px; font-size:14px; text-align:right; }
+        input:focus { outline:none; border-color:#38bdf8; background:rgba(255,255,255,0.12); }
+        .close-btn { width:100%; padding:14px; margin-top:16px; background:rgba(255,255,255,0.1); border:none; color:white; border-radius:12px; cursor:pointer; font-size:15px; font-weight:600; transition:all 0.2s; }
+        .close-btn:hover { background:rgba(255,255,255,0.15); }
+        .danger-btn { background:rgba(239,68,68,0.2)!important; color:#fca5a5!important; }
+        .danger-btn:hover { background:rgba(239,68,68,0.3)!important; }
+
+        .quick-btn { padding:8px 16px; background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.15); color:white; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.2s; }
+        .quick-btn:hover { background:rgba(255,255,255,0.12); }
+
+        /* ==================== INSTALL ==================== */
+        .install-btn { position:fixed; bottom:20px; right:20px; padding:12px 20px; background:linear-gradient(135deg,#8b5cf6,#7c3aed); border:none; border-radius:50px; color:white; font-weight:700; font-size:14px; cursor:pointer; box-shadow:0 6px 24px rgba(139,92,246,0.35); display:none; z-index:100; transition:all 0.3s; }
+        .install-btn.show { display:block; }
+        .install-btn:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(139,92,246,0.45); }
+
+        /* ==================== PARTICLES ==================== */
+        .particle { position:fixed; pointer-events:none; animation:particleFloat 1.5s ease-out forwards; z-index:999; font-size:20px; }
+        @keyframes particleFloat { 0%{transform:translateY(0) scale(1) rotate(0deg);opacity:1} 100%{transform:translateY(-80px) scale(0) rotate(180deg);opacity:0} }
+        .confetti { position:fixed; width:8px; height:8px; top:-10px; animation:confettiFall 2.5s ease-out forwards; z-index:1000; }
+        @keyframes confettiFall { 0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(100vh) rotate(720deg);opacity:0} }
+    </style>
+</head>
+<body>
+
+<div class="realm-container">
+    <!-- Sky -->
+    <div class="sky" id="sky">
+        <!-- Level badge -->
+        <div class="level-badge">
+            <div class="level-label" id="levelLabel">Lv.1 Egg</div>
+            <div class="xp-bar-wrap">
+                <div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div>
+            </div>
+        </div>
+        <div class="celestial-body sun-glow" id="celestial">☀️</div>
+        <div class="stars" id="stars"></div>
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+    </div>
+
+    <!-- Creature -->
+    <div class="creature-container">
+        <div class="creature" id="creature" onclick="creatureTap()">🥚</div>
+        <div class="creature-speech" id="creatureSpeech">Tap me! 👋</div>
+    </div>
+
+    <!-- River -->
+    <div class="river-container">
+        <div class="river-bed"></div>
+        <div class="river-water" id="riverWater" style="height:0%"></div>
+        <div class="fish f1" id="fish1" style="display:none">🐟</div>
+        <div class="fish f2" id="fish2" style="display:none">🐠</div>
+        <div class="tree" id="tree1" style="left:12%">🌱</div>
+        <div class="tree" id="tree2" style="left:45%">🌱</div>
+        <div class="tree" id="tree3" style="left:78%">🌱</div>
+    </div>
+
+    <!-- Streak -->
+    <div class="streak-flame" id="streakFlame">
+        <span class="flame" id="flame1">🔥</span>
+        <span class="flame" id="flame2">🔥</span>
+        <span class="flame" id="flame3">🔥</span>
+        <span class="flame" id="flame4">🔥</span>
+        <span class="flame" id="flame5">🔥</span>
+        <span class="flame" id="flame6">🔥</span>
+        <span class="flame" id="flame7">🔥</span>
+        <span style="margin-left:8px;font-size:14px;font-weight:600" id="streakText">0 day streak</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-bar">
+        <div class="stat">
+            <div class="stat-value" id="currentAmount">0</div>
+            <div class="stat-label">ml today</div>
+        </div>
+        <div class="progress-ring-container">
+            <svg class="progress-ring" width="70" height="70" viewBox="0 0 70 70">
+                <circle class="progress-ring-bg" cx="35" cy="35" r="30"/>
+                <circle class="progress-ring-circle" id="progressCircle" cx="35" cy="35" r="30"/>
+            </svg>
+            <div class="progress-text" id="percentText">0%</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="targetAmount">2800</div>
+            <div class="stat-label">ml goal</div>
+        </div>
+    </div>
+
+    <!-- XP multiplier banner -->
+    <div class="multiplier-banner" id="multiplierBanner">⚡ 2× XP Morning Bonus active until 9 AM!</div>
+
+    <!-- Drink Type Picker -->
+    <div class="log-section">
+        <div class="section-label">Select Drink</div>
+        <div class="drink-grid" id="drinkGrid">
+            <div class="drink-option selected" data-type="water" data-pct="100" onclick="selectDrink(this)">
+                <span class="drink-icon">💧</span>
+                <span class="drink-name">Water</span>
+                <span class="water-pct">100%</span>
+            </div>
+            <div class="drink-option" data-type="tea" data-pct="50" onclick="selectDrink(this)">
+                <span class="drink-icon">🍵</span>
+                <span class="drink-name">Tea</span>
+                <span class="water-pct">~50%</span>
+            </div>
+            <div class="drink-option" data-type="coffee" data-pct="98" onclick="selectDrink(this)">
+                <span class="drink-icon">☕</span>
+                <span class="drink-name">Coffee</span>
+                <span class="water-pct">~98%</span>
+            </div>
+            <div class="drink-option" data-type="milk" data-pct="87" onclick="selectDrink(this)">
+                <span class="drink-icon">🥛</span>
+                <span class="drink-name">Milk</span>
+                <span class="water-pct">~87%</span>
+            </div>
+            <div class="drink-option" data-type="juice" data-pct="85" onclick="selectDrink(this)">
+                <span class="drink-icon">🧃</span>
+                <span class="drink-name">Juice</span>
+                <span class="water-pct">~85%</span>
+            </div>
+            <div class="drink-option" data-type="soda" data-pct="90" onclick="selectDrink(this)">
+                <span class="drink-icon">🥤</span>
+                <span class="drink-name">Soda</span>
+                <span class="water-pct">~90%</span>
+            </div>
+            <div class="drink-option" data-type="coconut" data-pct="95" onclick="selectDrink(this)">
+                <span class="drink-icon">🥥</span>
+                <span class="drink-name">Coconut</span>
+                <span class="water-pct">~95%</span>
+            </div>
+            <div class="drink-option" data-type="soup" data-pct="92" onclick="selectDrink(this)">
+                <span class="drink-icon">🍲</span>
+                <span class="drink-name">Soup</span>
+                <span class="water-pct">~92%</span>
+            </div>
+        </div>
+
+        <!-- Log Mode Tabs -->
+        <div class="section-label">How much?</div>
+        <div class="log-tabs">
+            <div class="log-tab active" onclick="setLogMode('sip')" id="tab-sip">👄 Quick Sip</div>
+            <div class="log-tab" onclick="setLogMode('bottle')" id="tab-bottle">🍶 Bottle</div>
+            <div class="log-tab" onclick="setLogMode('precise')" id="tab-precise">🔢 Precise</div>
+        </div>
+
+        <!-- Mode: Quick Sip -->
+        <div id="mode-sip">
+            <div class="sip-grid">
+                <div class="sip-btn" onclick="logSip(75)">
+                    <span class="sip-emoji">💋</span>
+                    <span class="sip-name">A few sips</span>
+                    <span class="sip-ml">~75ml</span>
+                </div>
+                <div class="sip-btn" onclick="logSip(150)">
+                    <span class="sip-emoji">🥛</span>
+                    <span class="sip-name">Small drink</span>
+                    <span class="sip-ml">~150ml</span>
+                </div>
+                <div class="sip-btn" onclick="logSip(250)">
+                    <span class="sip-emoji">🥤</span>
+                    <span class="sip-name">Full glass</span>
+                    <span class="sip-ml">~250ml</span>
+                </div>
+                <div class="sip-btn" onclick="logSip(350)">
+                    <span class="sip-emoji">🍺</span>
+                    <span class="sip-name">Big glass</span>
+                    <span class="sip-ml">~350ml</span>
+                </div>
+                <div class="sip-btn" onclick="logSip(500)">
+                    <span class="sip-emoji">🫙</span>
+                    <span class="sip-name">Full bottle</span>
+                    <span class="sip-ml">~500ml</span>
+                </div>
+                <div class="sip-btn" onclick="logSip(750)">
+                    <span class="sip-emoji">💪</span>
+                    <span class="sip-name">Chugged</span>
+                    <span class="sip-ml">~750ml</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mode: Bottle slider -->
+        <div id="mode-bottle" style="display:none">
+            <div class="bottle-slider-wrap">
+                <div class="bottle-slider-header">
+                    <span style="font-size:13px;font-weight:600">My bottle is:</span>
+                    <span style="font-size:13px;color:#38bdf8;font-weight:700" id="sliderBottleLabel">500ml</span>
+                </div>
+                <div class="bottle-size-pills">
+                    <div class="bottle-size-pill" onclick="setBottleSize(300)">300ml</div>
+                    <div class="bottle-size-pill active" onclick="setBottleSize(500)">500ml</div>
+                    <div class="bottle-size-pill" onclick="setBottleSize(750)">750ml</div>
+                    <div class="bottle-size-pill" onclick="setBottleSize(1000)">1L</div>
+                    <div class="bottle-size-pill" onclick="setBottleSize(1500)">1.5L</div>
+                </div>
+                <!-- Visual bottle SVG -->
+                <div style="display:flex;align-items:center;gap:16px;justify-content:center;margin-bottom:10px">
+                    <div style="width:52px;height:110px;position:relative">
+                        <svg viewBox="0 0 52 110" width="52" height="110" xmlns="http://www.w3.org/2000/svg">
+                            <!-- bottle outline -->
+                            <path d="M19 8 L19 18 Q10 22 8 34 L8 95 Q8 102 15 102 L37 102 Q44 102 44 95 L44 34 Q42 22 33 18 L33 8 Z" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+                            <!-- bottle neck -->
+                            <rect x="19" y="2" width="14" height="8" rx="3" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+                            <!-- water fill clip -->
+                            <defs>
+                                <clipPath id="bottleClip">
+                                    <path d="M19 8 L19 18 Q10 22 8 34 L8 95 Q8 102 15 102 L37 102 Q44 102 44 95 L44 34 Q42 22 33 18 L33 8 Z"/>
+                                </clipPath>
+                            </defs>
+                            <!-- fill bar -->
+                            <rect id="bottleFillRect" x="8" y="102" width="36" height="0" fill="url(#waterGrad)" clip-path="url(#bottleClip)" style="transition:all 0.3s"/>
+                            <defs>
+                                <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#7dd3fc"/>
+                                    <stop offset="100%" stop-color="#0284c7"/>
+                                </linearGradient>
+                            </defs>
+                            <!-- wave line -->
+                            <line id="bottleWaveLine" x1="8" y1="102" x2="44" y2="102" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" style="transition:all 0.3s"/>
+                        </svg>
+                    </div>
+                    <div style="flex:1">
+                        <div style="font-size:12px;opacity:0.6;margin-bottom:6px">Drag to show how much you drank:</div>
+                        <div class="slider-row">
+                            <input type="range" class="amount-slider" id="bottleSlider" min="0" max="100" value="50" oninput="updateBottleSlider()">
+                            <div class="slider-value" id="bottleSliderValue">250ml</div>
+                        </div>
+                        <div style="font-size:11px;opacity:0.5;margin-top:4px;text-align:center" id="bottleSliderPct">50% of bottle</div>
+                    </div>
+                </div>
+                <button class="add-btn" style="width:100%;padding:12px" onclick="logBottleSlider()">➕ Log This Amount</button>
+            </div>
+        </div>
+
+        <!-- Mode: Precise -->
+        <div id="mode-precise" style="display:none">
+            <div class="amount-section">
+                <div class="amount-input-wrapper">
+                    <input type="number" class="amount-input" id="amountInput" placeholder="250" value="250" min="1" max="3000">
+                    <span class="amount-unit">ml</span>
+                </div>
+                <button class="add-btn" onclick="logDrink()">Add</button>
+            </div>
+            <div class="quick-amounts" id="quickAmounts">
+                <div class="quick-amount" onclick="setAmount(150)">150ml</div>
+                <div class="quick-amount active" onclick="setAmount(250)">250ml</div>
+                <div class="quick-amount" onclick="setAmount(500)">500ml</div>
+                <div class="quick-amount" onclick="setAmount(750)">750ml</div>
+                <div class="quick-amount" onclick="setAmount(1000)">1L</div>
+            </div>
+        </div>
+
+        <div class="water-info" id="waterInfo">
+            <span class="water-info-label">Water contribution:</span>
+            <span class="water-info-value" id="waterValue">250ml 💧</span>
+        </div>
+    </div>
+
+    <!-- Quests -->
+    <div class="quests">
+        <div class="quest-title">🎯 Daily Quests</div>
+        <div class="quest" id="quest1">
+            <div class="quest-check" id="check1"></div>
+            <div>Morning Starter (before 9 AM)</div>
+            <div class="quest-xp">+50 XP</div>
+        </div>
+        <div class="quest" id="quest2">
+            <div class="quest-check" id="check2"></div>
+            <div>Pre-Meal Ritual (before lunch)</div>
+            <div class="quest-xp">+30 XP</div>
+        </div>
+        <div class="quest" id="quest3">
+            <div class="quest-check" id="check3"></div>
+            <div>Tea Balancer (log tea or coffee)</div>
+            <div class="quest-xp">+20 XP</div>
+        </div>
+        <div class="quest" id="quest4">
+            <div class="quest-check" id="check4"></div>
+            <div>Evening Wind Down (after 8 PM)</div>
+            <div class="quest-xp">+40 XP</div>
+        </div>
+    </div>
+
+    <!-- Badges -->
+    <div class="badges-section">
+        <div class="quest-title">🏅 Achievements</div>
+        <div class="badges-grid" id="badgesGrid">
+            <!-- populated by JS -->
+        </div>
+    </div>
+
+    <!-- History -->
+    <div class="quests">
+        <div class="quest-title">📊 Last 7 Days</div>
+        <div class="history-bar" id="historyBar"></div>
+    </div>
+
+    <!-- Settings -->
+    <button class="quick-btn" style="width:100%;margin-top:4px;padding:14px;border-radius:12px;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.15);color:white;cursor:pointer;font-size:14px" onclick="openSettings()">⚙️ Settings</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+    <span id="toastIcon">💧</span>
+    <span id="toastText">Keep hydrating!</span>
+</div>
+
+<!-- Level Up overlay -->
+<div class="levelup-overlay" id="levelupOverlay">
+    <div class="levelup-card">
+        <span class="levelup-emoji" id="levelupEmoji">🐣</span>
+        <div class="levelup-title">Level Up!</div>
+        <div class="levelup-name" id="levelupName">Hatchling</div>
+        <div class="levelup-desc" id="levelupDesc">Your creature has evolved! Keep drinking!</div>
+        <button class="levelup-close" onclick="closeLevelUp()">Awesome! 🎉</button>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+        <h2>⚙️ Settings</h2>
+        <div class="setting-row">
+            <span class="setting-label">Daily Goal (ml)</span>
+            <input type="number" id="goalInput" value="2800" min="1000" max="5000" step="100">
+        </div>
+        <div class="setting-row">
+            <span class="setting-label">Wake Up Time</span>
+            <input type="time" id="wakeTime" value="07:15">
+        </div>
+        <div class="setting-row">
+            <span class="setting-label">Bed Time</span>
+            <input type="time" id="bedTime" value="01:00">
+        </div>
+        <div class="setting-row">
+            <span class="setting-label">Reminders</span>
+            <button class="quick-btn" style="width:auto;padding:6px 16px" onclick="toggleReminders()" id="reminderToggle">ON</button>
+        </div>
+        <div class="setting-row">
+            <span class="setting-label" style="color:#fca5a5">Reset Today</span>
+            <button class="quick-btn danger-btn" style="width:auto;padding:6px 16px" onclick="resetToday()">Reset</button>
+        </div>
+        <button class="close-btn" onclick="saveSettings()">Save & Close</button>
+    </div>
+</div>
+
+<button class="install-btn" id="installBtn" onclick="installApp()">📲 Install</button>
+
+<script>
+// ==================== DRINK TYPES ====================
+const drinkTypes = {
+    water:   { name:'Water',        pct:100, icon:'💧' },
+    tea:     { name:'Tea',          pct:50,  icon:'🍵' },
+    coffee:  { name:'Coffee',       pct:98,  icon:'☕' },
+    milk:    { name:'Milk',         pct:87,  icon:'🥛' },
+    juice:   { name:'Juice',        pct:85,  icon:'🧃' },
+    soda:    { name:'Soda',         pct:90,  icon:'🥤' },
+    coconut: { name:'Coconut Water',pct:95,  icon:'🥥' },
+    soup:    { name:'Soup',         pct:92,  icon:'🍲' }
+};
+
+let selectedDrink = 'water';
+let currentLogMode = 'sip';
+let bottleSize = 500;
+
+// ==================== LEVELS ====================
+const LEVELS = [
+    { level:1,  name:'Egg',          emoji:'🥚', xpNeeded:0,    desc:'A mysterious egg... what could be inside?' },
+    { level:2,  name:'Hatchling',    emoji:'🐣', xpNeeded:200,  desc:'Something cracked open! A tiny creature emerges!' },
+    { level:3,  name:'Baby Turtle',  emoji:'🐢', xpNeeded:500,  desc:'A tiny turtle! Swimming happily in your river.' },
+    { level:4,  name:'River Keeper', emoji:'🦦', xpNeeded:1000, desc:'A playful otter! Your realm is thriving.' },
+    { level:5,  name:'Ocean Sage',   emoji:'🐬', xpNeeded:1800, desc:'A wise dolphin joins your realm!' },
+    { level:6,  name:'Sea Dragon',   emoji:'🐲', xpNeeded:3000, desc:'A legendary sea dragon! The realm bows to you.' },
+    { level:7,  name:'Water God',    emoji:'🌊', xpNeeded:5000, desc:'You have become one with water itself.' }
+];
+
+const creatureStates = {
+    thirsty: { class:'thirsty' },
+    sad:     { class:'' },
+    neutral: { class:'' },
+    happy:   { class:'happy' },
+    ecstatic:{ class:'ecstatic' }
+};
+
+const creatureSpeeches = {
+    thirsty: ["I'm SO thirsty... 😭", "Please... just one sip... 🏜️", "My scales are cracking... 💀"],
+    sad:     ["I could use some water... 😕", "The river is drying up...", "Just a little more? 🥺"],
+    neutral: ["Doing okay! Keep it up 🙂", "Every drop counts! 💧", "You got this!"],
+    happy:   ["I'm feeling great! 🌟", "The realm is blooming! 🌸", "Water me more! 😄"],
+    ecstatic:["WE DID IT!! 🎉🎉🎉", "I LOVE YOU SO MUCH 💙", "LEGENDARY HYDRATION! 🏆"]
+};
+
+// ==================== BADGES ====================
+const BADGES = [
+    { id:'first_drop',  icon:'💧', name:'First Drop',   desc:'Log your first drink',                        check: s => s.totalDrinks >= 1 },
+    { id:'streak3',     icon:'🔥', name:'3-Day Streak', desc:'3 day streak',                                check: s => s.streak >= 3 },
+    { id:'streak7',     icon:'🌟', name:'Week Warrior', desc:'7 day streak',                                check: s => s.streak >= 7 },
+    { id:'goal',        icon:'🏆', name:'Goal Crusher', desc:'Hit your daily goal',                         check: s => s.goalHits >= 1 },
+    { id:'goal5',       icon:'👑', name:'5× Goal',      desc:'Hit your daily goal 5 times',                 check: s => s.goalHits >= 5 },
+    { id:'earlybird',   icon:'🌅', name:'Early Bird',   desc:'Log water before 7 AM',                       check: s => s.earlyBird },
+    { id:'lv3',         icon:'🐢', name:'Baby Turtle',  desc:'Reach Level 3',                               check: s => s.level >= 3 },
+    { id:'lv5',         icon:'🐬', name:'Dolphin',      desc:'Reach Level 5',                               check: s => s.level >= 5 },
+    { id:'allquests',   icon:'🎯', name:'Quest Master', desc:'Complete all 4 daily quests',                  check: s => s.quests.morning && s.quests.lunch && s.quests.tea && s.quests.evening },
+    { id:'bigday',      icon:'💪', name:'Hydro Hero',   desc:'Log 3000ml+ in one day',                      check: s => s.current >= 3000 },
+    { id:'nightowl',    icon:'🦉', name:'Night Owl',    desc:'Log water after midnight',                    check: s => s.nightOwl },
+    { id:'diversity',   icon:'🌈', name:'Mixologist',   desc:'Log 5+ different drink types',                check: s => new Set(s.drinksToday.map(d=>d.type)).size >= 5 },
+];
+
+// ==================== STATE ====================
+const state = {
+    current: 0,
+    goal: 2800,
+    history: [],
+    streak: 0,
+    xp: 0,
+    level: 1,
+    totalDrinks: 0,
+    goalHits: 0,
+    earlyBird: false,
+    nightOwl: false,
+    earnedBadges: [],
+    lastDrinkDate: null,
+    quests: { morning:false, lunch:false, tea:false, evening:false },
+    questsXpGiven: { morning:false, lunch:false, tea:false, evening:false },
+    reminders: true,
+    wakeTime: '07:15',
+    bedTime: '01:00',
+    drinksToday: []
+};
+
+// ==================== INIT ====================
+function init() {
+    loadState();
+    buildStars();
+    updateUI();
+    updateTimeOfDay();
+    renderHistory();
+    checkNewDay();
+    checkQuests();
+    renderBadges();
+    setupNotifications();
+    updateWaterInfoDisplay();
+    updateBottleSlider();
+    checkMorningBonus();
+
+    document.getElementById('amountInput').addEventListener('input', updateWaterInfoDisplay);
+    document.getElementById('settingsModal').addEventListener('click', function(e){ if(e.target===this) closeSettings(); });
+    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.deferredPrompt=e; document.getElementById('installBtn').classList.add('show'); });
+
+    // Update creature speech periodically
+    setInterval(updateCreatureSpeech, 30000);
+    
+    setInterval(() => { if(state.reminders) checkReminderTime(); }, 60000);
+    setInterval(checkMorningBonus, 60000);
+}
+
+function buildStars() {
+    const container = document.getElementById('stars');
+    for(let i=0;i<20;i++){
+        const s = document.createElement('div');
+        s.className = 'star';
+        s.style.cssText = `width:${Math.random()*3+1}px;height:${Math.random()*3+1}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*2}s;animation-duration:${1.5+Math.random()*2}s`;
+        container.appendChild(s);
+    }
+}
+
+function loadState() {
+    const saved = localStorage.getItem('aquarealm_v2');
+    if(saved){ Object.assign(state, JSON.parse(saved)); }
+    while(state.history.length < 7){
+        state.history.unshift({ date:getDateOffset(-state.history.length-1), amount:Math.floor(Math.random()*1200+600) });
+    }
+}
+
+function saveState() { localStorage.setItem('aquarealm_v2', JSON.stringify(state)); }
+function getDateOffset(days){ const d=new Date(); d.setDate(d.getDate()+days); return d.toISOString().split('T')[0]; }
+function getToday(){ return new Date().toISOString().split('T')[0]; }
+
+// ==================== LOG MODE ====================
+function setLogMode(mode) {
+    currentLogMode = mode;
+    ['sip','bottle','precise'].forEach(m => {
+        document.getElementById('mode-'+m).style.display = m===mode ? 'block' : 'none';
+        document.getElementById('tab-'+m).classList.toggle('active', m===mode);
+    });
+    updateWaterInfoDisplay();
+}
+
+// ==================== DRINK SELECTION ====================
+function selectDrink(element) {
+    document.querySelectorAll('.drink-option').forEach(el=>el.classList.remove('selected'));
+    element.classList.add('selected');
+    selectedDrink = element.dataset.type;
+    updateWaterInfoDisplay();
+    updateBottleSlider();
+}
+
+function setAmount(amount) {
+    document.getElementById('amountInput').value = amount;
+    document.querySelectorAll('.quick-amount').forEach(el=>{
+        el.classList.remove('active');
+        if(el.textContent.includes(amount+'ml')||(amount===1000&&el.textContent.includes('1L'))) el.classList.add('active');
+    });
+    updateWaterInfoDisplay();
+}
+
+function updateWaterInfoDisplay() {
+    const input = document.getElementById('amountInput');
+    const amount = parseInt(input?.value)||250;
+    const drink = drinkTypes[selectedDrink];
+    const water = Math.round(amount*(drink.pct/100));
+    document.getElementById('waterValue').textContent = `${water}ml ${drink.icon}`;
+}
+
+// ==================== BOTTLE SLIDER ====================
+function setBottleSize(size) {
+    bottleSize = size;
+    document.querySelectorAll('.bottle-size-pill').forEach(p=>{
+        p.classList.toggle('active', parseInt(p.textContent)===size||(size===1000&&p.textContent==='1L')||(size===1500&&p.textContent==='1.5L'));
+    });
+    document.getElementById('sliderBottleLabel').textContent = size>=1000?(size/1000)+'L':size+'ml';
+    updateBottleSlider();
+}
+
+function updateBottleSlider() {
+    const pct = parseInt(document.getElementById('bottleSlider').value);
+    const amount = Math.round(bottleSize*(pct/100));
+    const drink = drinkTypes[selectedDrink];
+    const water = Math.round(amount*(drink.pct/100));
+
+    document.getElementById('bottleSliderValue').textContent = amount+'ml';
+    document.getElementById('bottleSliderPct').textContent = `${pct}% of bottle → ${water}ml water`;
+
+    // Update SVG bottle fill: bottle body goes from y=18 to y=102 → height=84
+    const fillHeight = Math.round(84 * pct/100);
+    const fillY = 102 - fillHeight;
+    const rect = document.getElementById('bottleFillRect');
+    const wave = document.getElementById('bottleWaveLine');
+    if(rect){ rect.setAttribute('y', fillY); rect.setAttribute('height', fillHeight); }
+    if(wave){ wave.setAttribute('y1', fillY); wave.setAttribute('y2', fillY); }
+}
+
+function logBottleSlider() {
+    const pct = parseInt(document.getElementById('bottleSlider').value);
+    const amount = Math.round(bottleSize*(pct/100));
+    if(amount<=0){ showToast('Slide up to log an amount! ⚠️'); return; }
+    addDrink(amount);
+}
+
+// ==================== CORE LOGGING ====================
+function logSip(amount) { addDrink(amount); }
+
+function logDrink() {
+    const amount = parseInt(document.getElementById('amountInput').value)||0;
+    if(amount<=0){ showToast('Please enter an amount! ⚠️'); return; }
+    addDrink(amount);
+}
+
+function addDrink(amount) {
+    const drink = drinkTypes[selectedDrink];
+    const waterAmount = Math.round(amount*(drink.pct/100));
+    const now = new Date();
+    const hour = now.getHours();
+
+    state.drinksToday.push({ type:selectedDrink, totalAmount:amount, waterAmount, time:now.toISOString() });
+    state.current += waterAmount;
+    state.totalDrinks++;
+
+    // Quest checks
+    if(hour<9)               state.quests.morning = true;
+    if(hour>=11&&hour<=14)   state.quests.lunch = true;
+    if(hour>=20&&hour<=23)   state.quests.evening = true;
+    if(selectedDrink==='tea'||selectedDrink==='coffee') state.quests.tea = true;
+
+    // Special badge conditions
+    if(hour<7) state.earlyBird = true;
+    if(hour>=0&&hour<4) state.nightOwl = true;
+
+    state.lastDrinkDate = now.toISOString();
+
+    // XP calculation
+    const mult = getMorningMultiplier();
+    const baseXP = Math.round(waterAmount/10);
+    const xpGained = Math.round(baseXP*mult);
+    awardXP(xpGained, true);
+
+    createParticles();
+    showToast(`${drink.icon} +${amount}ml = ${waterAmount}ml water  •  +${xpGained} XP${mult>1?' ⚡':''}`, '💧');
+
+    // Milestone triggers
+    const prev = (state.current - waterAmount)/state.goal;
+    const now2 = state.current/state.goal;
+    if(prev<0.25&&now2>=0.25){ setTimeout(()=>showToast('🌱 First quarter! The river stirs!'),400); }
+    else if(prev<0.5&&now2>=0.5){ setTimeout(()=>showToast('🌳 Halfway! Trees are growing!'),400); document.getElementById('tree1').textContent='🌳'; document.getElementById('tree1').classList.add('bloom'); }
+    else if(prev<0.75&&now2>=0.75){ setTimeout(()=>showToast('🌸 Almost there! Realm is thriving!'),400); document.getElementById('tree2').textContent='🌸'; document.getElementById('tree2').classList.add('bloom'); }
+    else if(prev<1&&now2>=1){
+        state.goalHits++;
+        setTimeout(()=>showToast('🎉 GOAL REACHED! Your realm is magnificent!'),400);
+        document.getElementById('tree3').textContent='🏆'; document.getElementById('tree3').classList.add('bloom');
+        // Show fish when goal hit
+        document.getElementById('fish1').style.display='block';
+        document.getElementById('fish2').style.display='block';
+        createConfetti();
+        updateStreak();
+    }
+
+    // Quest XP bonuses
+    checkQuestXP();
+    checkBadges();
+    saveState();
+    updateUI();
+    checkQuests();
+    renderBadges();
+    updateCreatureSpeech();
+}
+
+// ==================== XP & LEVELS ====================
+function getMorningMultiplier() {
+    const h = new Date().getHours();
+    return (h<9 && state.quests.morning) ? 2 : 1;
+}
+
+function awardXP(amount, animate) {
+    state.xp += amount;
+    if(animate) showXPPop(amount);
+    checkLevelUp();
+}
+
+function checkLevelUp() {
+    for(let i=LEVELS.length-1;i>=0;i--){
+        if(state.xp>=LEVELS[i].xpNeeded && state.level < LEVELS[i].level){
+            const prevLevel = state.level;
+            state.level = LEVELS[i].level;
+            showLevelUp(LEVELS[i]);
+            // Update fish visibility at level 3+
+            if(state.level>=3){ document.getElementById('fish1').style.display='block'; }
+            if(state.level>=4){ document.getElementById('fish2').style.display='block'; }
+            break;
+        }
+    }
+}
+
+function getCurrentLevelData() {
+    let cur = LEVELS[0];
+    for(let i=0;i<LEVELS.length;i++){ if(state.xp>=LEVELS[i].xpNeeded) cur=LEVELS[i]; }
+    return cur;
+}
+
+function getNextLevelData() {
+    for(let i=0;i<LEVELS.length;i++){ if(LEVELS[i].xpNeeded>state.xp) return LEVELS[i]; }
+    return null;
+}
+
+function updateXPBar() {
+    const cur = getCurrentLevelData();
+    const next = getNextLevelData();
+    const pct = next ? Math.round(((state.xp-cur.xpNeeded)/(next.xpNeeded-cur.xpNeeded))*100) : 100;
+    document.getElementById('xpBarFill').style.width = pct+'%';
+    document.getElementById('levelLabel').textContent = `Lv.${state.level} ${cur.name}`;
+}
+
+function showLevelUp(levelData) {
+    document.getElementById('levelupEmoji').textContent = levelData.emoji;
+    document.getElementById('levelupName').textContent = levelData.name;
+    document.getElementById('levelupDesc').textContent = levelData.desc;
+    document.getElementById('levelupOverlay').classList.add('show');
+    createConfetti();
+}
+
+function closeLevelUp() {
+    document.getElementById('levelupOverlay').classList.remove('show');
+}
+
+function showXPPop(amount) {
+    const pop = document.createElement('div');
+    pop.className = 'xp-pop';
+    pop.textContent = '+'+amount+' XP';
+    pop.style.left = (30+Math.random()*40)+'%';
+    pop.style.top = '40%';
+    document.body.appendChild(pop);
+    setTimeout(()=>pop.remove(), 1300);
+}
+
+function checkQuestXP() {
+    const questXP = { morning:50, lunch:30, tea:20, evening:40 };
+    Object.entries(questXP).forEach(([q,xp])=>{
+        if(state.quests[q] && !state.questsXpGiven[q]){
+            state.questsXpGiven[q] = true;
+            awardXP(xp, true);
+            setTimeout(()=>showToast(`🎯 Quest complete! +${xp} XP`, '🎯'), 800);
+        }
+    });
+}
+
+// ==================== MORNING BONUS ====================
+function checkMorningBonus() {
+    const h = new Date().getHours();
+    const banner = document.getElementById('multiplierBanner');
+    if(h<9){ banner.classList.add('show'); }
+    else { banner.classList.remove('show'); }
+}
+
+// ==================== BADGES ====================
+function checkBadges() {
+    BADGES.forEach(badge=>{
+        if(!state.earnedBadges.includes(badge.id) && badge.check(state)){
+            state.earnedBadges.push(badge.id);
+            setTimeout(()=>showToast(`🏅 Badge earned: ${badge.name}!`, '🏅'), 1200);
+        }
+    });
+}
+
+function renderBadges() {
+    const grid = document.getElementById('badgesGrid');
+    grid.innerHTML = '';
+    BADGES.forEach(badge=>{
+        const el = document.createElement('div');
+        const earned = state.earnedBadges.includes(badge.id);
+        el.className = 'badge'+(earned?' earned':'');
+        el.innerHTML = `<span>${badge.icon}</span><span class="badge-label">${badge.name}</span>`;
+        el.title = badge.desc;
+        el.onclick = ()=> showToast(`${badge.icon} ${badge.name}: ${badge.desc}`, badge.icon);
+        grid.appendChild(el);
+    });
+}
+
+// ==================== CREATURE SPEECH ====================
+function updateCreatureSpeech() {
+    const pct = state.current/state.goal;
+    let mood = 'neutral';
+    if(pct===0) mood='thirsty';
+    else if(pct<0.3) mood='sad';
+    else if(pct<0.6) mood='neutral';
+    else if(pct<1) mood='happy';
+    else mood='ecstatic';
+    const lines = creatureSpeeches[mood];
+    document.getElementById('creatureSpeech').textContent = lines[Math.floor(Math.random()*lines.length)];
+}
+
+function creatureTap() {
+    updateCreatureSpeech();
+    const creature = document.getElementById('creature');
+    creature.style.transform = 'scale(1.3) rotate(10deg)';
+    setTimeout(()=>creature.style.transform='',400);
+}
+
+// ==================== TIME OF DAY ====================
+function updateTimeOfDay() {
+    const h = new Date().getHours();
+    const sky = document.getElementById('sky');
+    const cel = document.getElementById('celestial');
+    sky.classList.remove('night','sunset');
+    if(h>=6&&h<17){ cel.textContent='☀️'; cel.className='celestial-body sun-glow'; }
+    else if(h>=17&&h<20){ sky.classList.add('sunset'); cel.textContent='🌅'; cel.className='celestial-body sun-glow'; }
+    else { sky.classList.add('night'); cel.textContent='🌙'; cel.className='celestial-body moon-glow'; }
+}
+
+// ==================== UI UPDATE ====================
+function updateUI() {
+    const pct = Math.min(state.current/state.goal,1);
+    const pctDisp = Math.round((state.current/state.goal)*100);
+
+    document.getElementById('currentAmount').textContent = state.current;
+    document.getElementById('percentText').textContent = pctDisp+'%';
+    document.getElementById('targetAmount').textContent = state.goal;
+
+    const circ = 188.5;
+    document.getElementById('progressCircle').style.strokeDashoffset = circ-(pct*circ);
+
+    document.getElementById('riverWater').style.height = (pct*100)+'%';
+
+    // Creature
+    const cur = getCurrentLevelData();
+    const creature = document.getElementById('creature');
+    creature.textContent = cur.emoji;
+
+    let moodKey = 'neutral';
+    if(pct===0) moodKey='thirsty';
+    else if(pct<0.3) moodKey='sad';
+    else if(pct<0.6) moodKey='neutral';
+    else if(pct<1) moodKey='happy';
+    else moodKey='ecstatic';
+    creature.className = 'creature '+(creatureStates[moodKey].class||'');
+
+    document.getElementById('streakText').textContent = state.streak+' day streak';
+    updateFlames();
+    updateXPBar();
+}
+
+function updateFlames() {
+    const lit = Math.min(Math.floor(state.streak/1)+1,7);
+    for(let i=1;i<=7;i++){
+        document.getElementById('flame'+i).classList.toggle('lit', i<=Math.min(state.streak,7));
+    }
+}
+
+// ==================== QUESTS ====================
+function checkQuests() {
+    ['morning','lunch','tea','evening'].forEach((q,i)=>{
+        const el = document.getElementById('quest'+(i+1));
+        const check = document.getElementById('check'+(i+1));
+        if(state.quests[q]){ el.classList.add('complete'); check.textContent='✓'; }
+        else { el.classList.remove('complete'); check.textContent=''; }
+    });
+    saveState();
+}
+
+// ==================== HISTORY ====================
+function renderHistory() {
+    const bar = document.getElementById('historyBar');
+    bar.innerHTML='';
+    state.history.slice(-7).forEach((day,idx)=>{
+        const isToday = idx===state.history.slice(-7).length-1;
+        const pct = Math.min(day.amount/state.goal,1);
+        const dayName = new Date(day.date).toLocaleDateString('en',{weekday:'short'});
+        const pill = document.createElement('div');
+        pill.className='day-pill'+(isToday?' today':'');
+        pill.innerHTML=`<div class="day-fill" style="height:${pct*100}%"></div><div class="day-label">${dayName}</div><div class="day-value">${Math.round(pct*100)}%</div>`;
+        bar.appendChild(pill);
+    });
+}
+
+// ==================== STREAK ====================
+function checkNewDay() {
+    const today = getToday();
+    const last = state.history[state.history.length-1];
+    if(last && last.date!==today){
+        const prev = state.history[state.history.length-2];
+        if(prev&&prev.amount>=state.goal*0.8){ state.streak++; showToast(`🔥 ${state.streak} day streak!`); }
+        else if(prev){ state.streak=0; showToast('Streak reset. New day! 💪'); }
+        state.history.push({date:today,amount:0});
+        if(state.history.length>7) state.history.shift();
+        state.current=0; state.quests={morning:false,lunch:false,tea:false,evening:false};
+        state.questsXpGiven={morning:false,lunch:false,tea:false,evening:false};
+        state.drinksToday=[];
+        ['tree1','tree2','tree3'].forEach(id=>{ document.getElementById(id).textContent='🌱'; document.getElementById(id).classList.remove('bloom'); });
+        document.getElementById('fish1').style.display='none';
+        document.getElementById('fish2').style.display='none';
+        saveState();
+    } else if(!last){ state.history.push({date:today,amount:0}); saveState(); }
+}
+
+function updateStreak() {
+    const today = getToday();
+    const entry = state.history.find(h=>h.date===today);
+    if(entry) entry.amount=state.current;
+    saveState();
+}
+
+// ==================== NOTIFICATIONS ====================
+function setupNotifications() {
+    if('Notification'in window&&Notification.permission==='granted') scheduleReminders();
+}
+
+function checkReminderTime() {
+    const now = new Date(), h=now.getHours(), m=now.getMinutes();
+    [[8,30],[10,0],[11,30],[13,0],[14,30],[16,0],[17,30],[19,30],[21,0]].forEach(([rh,rm])=>{
+        if(h===rh&&m===rm) showNotification();
+    });
+}
+
+function showNotification() {
+    if('Notification'in window&&Notification.permission==='granted'){
+        const cur = getCurrentLevelData();
+        const msgs = [`💧 ${cur.emoji} ${cur.name} is thirsty! Drink some water!`,`🌊 The river needs you!`,`⚡ Log now for XP gains!`];
+        new Notification('AquaRealm',{body:msgs[Math.floor(Math.random()*msgs.length)]});
+    }
+}
+
+function requestNotificationPermission() {
+    if('Notification'in window) Notification.requestPermission().then(p=>{ if(p==='granted'){ showToast('🔔 Reminders enabled!'); } });
+}
+
+function scheduleReminders() { setTimeout(()=>showToast('🔔 Reminders are active!'),2000); }
+
+function toggleReminders() {
+    state.reminders=!state.reminders;
+    document.getElementById('reminderToggle').textContent=state.reminders?'ON':'OFF';
+    if(state.reminders) requestNotificationPermission();
+}
+
+// ==================== VISUAL EFFECTS ====================
+function showToast(message, icon='💧') {
+    document.getElementById('toastIcon').textContent=icon;
+    document.getElementById('toastText').textContent=message;
+    const t=document.getElementById('toast');
+    t.classList.remove('show');
+    setTimeout(()=>t.classList.add('show'),10);
+    clearTimeout(window._toastTimer);
+    window._toastTimer=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+function createParticles() {
+    ['💧','✨','💦','🌊'].forEach((e,i)=>{
+        setTimeout(()=>{
+            const p=document.createElement('div'); p.className='particle'; p.textContent=e;
+            p.style.left=(Math.random()*70+15)+'%'; p.style.top='45%';
+            document.body.appendChild(p); setTimeout(()=>p.remove(),1500);
+        },i*80);
+    });
+}
+
+function createConfetti() {
+    const colors=['#38bdf8','#22c55e','#a855f7','#f59e0b','#ef4444','#ec4899'];
+    for(let i=0;i<30;i++){
+        const c=document.createElement('div'); c.className='confetti';
+        c.style.left=Math.random()*100+'%';
+        c.style.backgroundColor=colors[Math.floor(Math.random()*colors.length)];
+        c.style.animationDelay=Math.random()*1.5+'s';
+        c.style.borderRadius=Math.random()>0.5?'50%':'2px';
+        document.body.appendChild(c); setTimeout(()=>c.remove(),2600);
+    }
+}
+
+// ==================== SETTINGS ====================
+function openSettings() {
+    document.getElementById('settingsModal').classList.add('active');
+    document.getElementById('goalInput').value=state.goal;
+    document.getElementById('wakeTime').value=state.wakeTime;
+    document.getElementById('bedTime').value=state.bedTime;
+    document.getElementById('reminderToggle').textContent=state.reminders?'ON':'OFF';
+}
+
+function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
+
+function saveSettings() {
+    state.goal=parseInt(document.getElementById('goalInput').value);
+    state.wakeTime=document.getElementById('wakeTime').value;
+    state.bedTime=document.getElementById('bedTime').value;
+    saveState(); updateUI(); closeSettings(); showToast('Settings saved! ✅');
+}
+
+function resetToday() {
+    if(confirm("Reset today's progress?")){
+        state.current=0; state.quests={morning:false,lunch:false,tea:false,evening:false};
+        state.questsXpGiven={morning:false,lunch:false,tea:false,evening:false};
+        state.drinksToday=[];
+        ['tree1','tree2','tree3'].forEach(id=>{ document.getElementById(id).textContent='🌱'; document.getElementById(id).classList.remove('bloom'); });
+        document.getElementById('fish1').style.display='none'; document.getElementById('fish2').style.display='none';
+        saveState(); updateUI(); showToast('Day reset! Start fresh 🌱');
+    }
+}
+
+// ==================== INSTALL ====================
+function installApp() {
+    if(window.deferredPrompt){
+        window.deferredPrompt.prompt();
+        window.deferredPrompt.userChoice.then(c=>{ if(c.outcome==='accepted'){ showToast('AquaRealm installed! 🎉'); document.getElementById('installBtn').classList.remove('show'); } window.deferredPrompt=null; });
+    }
+}
+
+// ==================== START ====================
+window.onload = init;
+document.addEventListener('click',()=>{ if('Notification'in window&&Notification.permission==='default') requestNotificationPermission(); },{once:true});
+</script>
+</body>
+</html>

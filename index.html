@@ -7,6 +7,7 @@
     <title>AquaRealm</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/3.6.2/fetch.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
@@ -549,7 +550,7 @@
     <div class="stats-bar">
         <div class="stat">
             <div class="stat-value" id="currentAmount">0</div>
-            <div class="stat-label">ml today</div>
+            <div class="stat-label">ml today <span id="syncDot" title="Sync status" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#64748b;vertical-align:middle;margin-left:4px;transition:background 0.4s"></span></div>
         </div>
         <div class="progress-ring-container">
             <svg class="progress-ring" width="70" height="70" viewBox="0 0 70 70">
@@ -921,13 +922,20 @@ function init() {
     updateBottleSlider();
     checkMorningBonus();
 
+    // Cloud sync on startup
+    setSyncDot(navigator.onLine ? 'syncing' : 'offline');
+    if(navigator.onLine) {
+        loadCloudHistory().then(() => syncDailySummary()).then(() => {
+            setSyncDot('ok');
+            cleanOldData();
+        }).catch(() => setSyncDot('error'));
+    }
+
     document.getElementById('amountInput').addEventListener('input', updateWaterInfoDisplay);
     document.getElementById('settingsModal').addEventListener('click', function(e){ if(e.target===this) closeSettings(); });
     window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.deferredPrompt=e; document.getElementById('installBtn').classList.add('show'); });
 
-    // Update creature speech periodically
     setInterval(updateCreatureSpeech, 30000);
-    
     setInterval(() => { if(state.reminders) checkReminderTime(); }, 60000);
     setInterval(checkMorningBonus, 60000);
 }
@@ -1090,6 +1098,14 @@ function addDrink(amount) {
     checkQuests();
     renderBadges();
     updateCreatureSpeech();
+
+    // Sync to cloud
+    const drinkRecord = state.drinksToday[state.drinksToday.length - 1];
+    drinkRecord.xpGained = xpGained;
+    pushDrinkToCloud(drinkRecord).then(() => {
+        lastSyncedDrinkCount = state.drinksToday.length;
+        syncDailySummary();
+    });
 }
 
 // ==================== XP & LEVELS ====================
@@ -1426,6 +1442,172 @@ function installApp() {
         window.deferredPrompt.userChoice.then(c=>{ if(c.outcome==='accepted'){ showToast('AquaRealm installed! 🎉'); document.getElementById('installBtn').classList.remove('show'); } window.deferredPrompt=null; });
     }
 }
+
+// ==================== SUPABASE SYNC ====================
+const SUPA_URL  = 'https://bxcvnymzdljggflpcbke.supabase.co';
+const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4Y3ZueW16ZGxqZ2dmbHBjYmtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDQzMjIsImV4cCI6MjA5MzYyMDMyMn0.ZkENclIYOFl18kgKhRRgWlmr5RXOEYqv4mmOvKRjoyQ';
+const SUPA_HDRS = { 'Content-Type':'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY };
+
+let syncPending = false;
+let lastSyncedDrinkCount = 0; // track how many drinks we've already pushed
+
+function setSyncDot(status) {
+    // status: 'syncing' | 'ok' | 'error' | 'offline'
+    const dot = document.getElementById('syncDot');
+    if(!dot) return;
+    const colors = { syncing:'#fbbf24', ok:'#22c55e', error:'#ef4444', offline:'#64748b' };
+    dot.style.background = colors[status] || '#64748b';
+    dot.title = { syncing:'Syncing…', ok:'Synced ✓', error:'Sync failed', offline:'Offline' }[status] || '';
+}
+
+async function supaFetch(path, method='GET', body=null) {
+    const opts = { method, headers: SUPA_HDRS };
+    if(body) opts.body = JSON.stringify(body);
+    const r = await fetch(SUPA_URL + path, opts);
+    if(!r.ok) throw new Error(`Supabase ${r.status}`);
+    return r.status === 204 ? null : r.json();
+}
+
+// Push a single drink entry immediately after logging
+async function pushDrinkToCloud(drink) {
+    if(!navigator.onLine) { setSyncDot('offline'); syncPending=true; return; }
+    setSyncDot('syncing');
+    try {
+        await supaFetch('/rest/v1/water_logs', 'POST', {
+            logged_at:    drink.time,
+            drink_type:   drink.type,
+            total_amount: drink.totalAmount,
+            water_amount: drink.waterAmount,
+            xp_gained:    drink.xpGained || 0
+        });
+        // Upsert today's summary
+        await upsertDailySummary();
+        setSyncDot('ok');
+    } catch(e) {
+        console.warn('Sync error:', e);
+        setSyncDot('error');
+        syncPending = true;
+    }
+}
+
+// Full upsert for daily summary (handles insert + update)
+async function syncDailySummary() {
+    if(!navigator.onLine) return;
+    const today = getToday();
+    try {
+        await fetch(`${SUPA_URL}/rest/v1/daily_summary`, {
+            method: 'POST',
+            headers: {
+                ...SUPA_HDRS,
+                'Prefer': 'resolution=merge-duplicates'
+            },
+            body: JSON.stringify({
+                log_date:    today,
+                total_water: state.current,
+                goal:        state.goal,
+                xp_earned:   state.xp,
+                streak:      state.streak
+            })
+        });
+    } catch(e) { console.warn('Summary sync error', e); }
+}
+
+// On reconnect, push any pending unsynced drinks
+async function flushPendingSync() {
+    if(!syncPending || !navigator.onLine) return;
+    syncPending = false;
+    setSyncDot('syncing');
+    try {
+        // Push drinks that haven't been uploaded yet (we track by comparing counts)
+        const unsynced = state.drinksToday.slice(lastSyncedDrinkCount);
+        for(const drink of unsynced) {
+            await supaFetch('/rest/v1/water_logs', 'POST', {
+                logged_at:    drink.time,
+                drink_type:   drink.type,
+                total_amount: drink.totalAmount,
+                water_amount: drink.waterAmount,
+                xp_gained:    drink.xpGained || 0
+            });
+        }
+        lastSyncedDrinkCount = state.drinksToday.length;
+        await syncDailySummary();
+        setSyncDot('ok');
+    } catch(e) {
+        console.warn('Flush error:', e);
+        setSyncDot('error');
+        syncPending = true;
+    }
+}
+
+// Load history from Supabase on startup (last 30 days)
+async function loadCloudHistory() {
+    if(!navigator.onLine) return;
+    try {
+        const thirtyDaysAgo = getDateOffset(-30);
+        const rows = await supaFetch(
+            `/rest/v1/daily_summary?log_date=gte.${thirtyDaysAgo}&order=log_date.asc&select=log_date,total_water,goal`
+        );
+        if(!rows || rows.length === 0) return;
+
+        // Merge cloud history into local state.history
+        // Cloud is authoritative for past days; local is authoritative for today
+        const today = getToday();
+        const cloudMap = {};
+        rows.forEach(r => { cloudMap[r.log_date] = r; });
+
+        // Rebuild history: last 30 days from cloud, keep today from local
+        const merged = [];
+        for(let i=29; i>=0; i--) {
+            const date = getDateOffset(-i);
+            if(date === today) {
+                // Today: use local state
+                merged.push({ date, amount: state.current });
+            } else if(cloudMap[date]) {
+                merged.push({ date, amount: cloudMap[date].total_water });
+            }
+            // Days with no data are skipped (no entry = nothing logged)
+        }
+
+        // We show last 7 in the bar, so trim to last 7 for display
+        // But keep full 30 in state for potential future stats view
+        state.cloudHistory = merged;
+
+        // Update the 7-day display to use cloud data
+        const last7 = merged.slice(-7);
+        if(last7.length > 0) {
+            // Pad to 7 if needed
+            while(last7.length < 7) last7.unshift({ date:'', amount:0 });
+            state.history = last7;
+            renderHistory();
+        }
+
+        // Also sync xp/streak from cloud for the most recent past day
+        const yesterdayRow = cloudMap[getDateOffset(-1)];
+        if(yesterdayRow && state.streak === 0) {
+            // Don't overwrite streak if we already have one locally
+        }
+
+    } catch(e) {
+        console.warn('Cloud history load error:', e);
+    }
+}
+
+// Auto-delete logs older than 30 days (runs once on load if online)
+async function cleanOldData() {
+    if(!navigator.onLine) return;
+    const cutoff = getDateOffset(-30);
+    try {
+        await fetch(`${SUPA_URL}/rest/v1/water_logs?logged_at=lt.${cutoff}T00:00:00Z`, {
+            method: 'DELETE', headers: SUPA_HDRS
+        });
+        await fetch(`${SUPA_URL}/rest/v1/daily_summary?log_date=lt.${cutoff}`, {
+            method: 'DELETE', headers: SUPA_HDRS
+        });
+    } catch(e) { /* silent — not critical */ }
+}
+
+window.addEventListener('online',  () => { setSyncDot('syncing'); flushPendingSync(); });
+window.addEventListener('offline', () => setSyncDot('offline'));
 
 // ==================== START ====================
 window.onload = init;

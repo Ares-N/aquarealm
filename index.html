@@ -568,7 +568,7 @@ async function init() {
     onPInput();
 
     // STEP 4: push today summary and clean old data
-    if (navigator.onLine) syncSummary().then(() => cleanOld());
+    if (navigator.onLine) cleanOld(); // summary synced only on drink log, not on init
 
     setInterval(updateScene,   60000);
     setInterval(checkMBanner,  60000);
@@ -1121,10 +1121,27 @@ async function pushDrink(d) {
     } catch(e){console.warn('sync',e);setSyncDot('error');_pend=true;}
 }
 async function syncSummary() {
-    if(!navigator.onLine)return;
+    if(!navigator.onLine) return;
+    const payload = {log_date:today(), total_water:S.current, goal:S.goal, xp_earned:S.xp, streak:S.streak};
     try {
-        await fetch(`${SURL}/rest/v1/daily_summary`,{method:'POST',headers:{...SH,'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({log_date:today(),total_water:S.current,goal:S.goal,xp_earned:S.xp,streak:S.streak})});
-    } catch(e){console.warn('summary',e);}
+        // Try PATCH first (update existing row)
+        const patch = await fetch(`${SURL}/rest/v1/daily_summary?log_date=eq.${today()}`, {
+            method: 'PATCH',
+            headers: {...SH, 'Prefer': 'return=minimal'},
+            body: JSON.stringify(payload)
+        });
+        // If no row existed (nothing was patched), insert instead
+        if (patch.ok) {
+            const affected = patch.headers.get('content-range');
+            if (affected === '*/0' || affected === null) {
+                await fetch(`${SURL}/rest/v1/daily_summary`, {
+                    method: 'POST',
+                    headers: {...SH, 'Prefer': 'return=minimal'},
+                    body: JSON.stringify(payload)
+                });
+            }
+        }
+    } catch(e) { console.warn('summary', e); }
 }
 async function flushSync() {
     if(!_pend||!navigator.onLine)return; _pend=false; setSyncDot('syncing');

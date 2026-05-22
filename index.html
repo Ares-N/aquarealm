@@ -702,7 +702,7 @@ function updateRampWeek() {
   if (newWeek > S.rampWeek) {
     S.rampWeek = newWeek;
     S.goal = getGoal();
-    showToast(`📈 Week ${newWeek} unlocked! New goal: ${S.goal}ml`, '🎯');
+    showToast(`📈 Week ${newWeek} unlocked! New goal: ${getGoal()}ml`, '🎯');
     if (newWeek === 2 && !S.earnedBadges.includes('week2')) { S.earnedBadges.push('week2'); setTimeout(()=>showToast('📈 Badge: Week 2 earned!','🏅'),1500); }
     if (newWeek === 4 && !S.earnedBadges.includes('week4')) { S.earnedBadges.push('week4'); setTimeout(()=>showToast('🎯 Badge: Full Target reached!','🏅'),1500); }
     save();
@@ -879,7 +879,7 @@ function addDrink(totalAmt) {
   if(prevP<.25&&nowP>=.25)setTimeout(()=>showToast('🌱 25%! The river stirs!'),400);
   else if(prevP<.5&&nowP>=.5){setTimeout(()=>showToast('🌳 Halfway! Trees are growing!'),400);setTree('t1','🌳');}
   else if(prevP<.75&&nowP>=.75){setTimeout(()=>showToast('🌸 75%! Realm is thriving!'),400);setTree('t2','🌸');}
-  else if(prevP<1&&nowP>=1){S.goalHits++;setTimeout(()=>showToast('🎉 GOAL REACHED! Magnificent!'),400);setTree('t3','🏆');document.getElementById('fish1').classList.add('show');document.getElementById('fish2').classList.add('show');createConfetti();}
+  else if(prevP<1&&nowP>=1){getGoal()Hits++;setTimeout(()=>showToast('🎉 GOAL REACHED! Magnificent!'),400);setTree('t3','🏆');document.getElementById('fish1').classList.add('show');document.getElementById('fish2').classList.add('show');createConfetti();}
   if(isSleep)setTimeout(()=>showToast('😴 Sleep hours — XP reduced. Rest well!','🌙'),500);
   else{const bonus=earlyBird?' ⚡+50%':pacing?' 💧+20%':'';showToast(`${drink.icon} +${totalAmt}ml → ${waterAmt}ml water • +${xp} XP${bonus}`,'💧');}
   createParticles();
@@ -937,7 +937,7 @@ function checkBadges(){
   const allQ=buildQuests(getGoal()).every(q=>(S.questProgress[q.id]||0)>=q.target);
   const chk={
     first_drop:()=>S.totalDrinks>=1,streak3:()=>S.streak>=3,streak7:()=>S.streak>=7,
-    goal_hit:()=>S.goalHits>=1,goal5:()=>S.goalHits>=5,
+    goal_hit:()=>getGoal()Hits>=1,goal5:()=>getGoal()Hits>=5,
     earlybird:()=>S.earnedBadges.includes('earlybird'),allquests:()=>allQ,
     lv3:()=>S.level>=3,lv5:()=>S.level>=5,bigday:()=>S.current>=3000,
     consistent:()=>(S.questStreakDays||0)>=3,
@@ -1063,7 +1063,6 @@ function renderHistory(){
 
 // ── SETTINGS ──
 function openSettings(){
-  document.getElementById('sg') && null; // no goal input now
   document.getElementById('sw').value=S.wakeTime||'07:00';
   document.getElementById('sb').value=S.bedTime||'23:00';
   renderDayTypeToggle();

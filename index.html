@@ -172,6 +172,7 @@ button{font-family:inherit}
 .quest:last-child{margin-bottom:0}
 .quest.done{opacity:.55;background:rgba(34,197,94,.07)}
 .quest.expired{opacity:.32}
+.quest.active-quest{border-left:2px solid #38bdf8;background:rgba(56,189,248,.06)}
 .qcheck{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .3s}
 .quest.done .qcheck{background:#22c55e;border-color:#22c55e;color:white}
 .qinfo{flex:1}
@@ -497,13 +498,90 @@ const LEVELS = [
   {level:7,name:'Water God',emoji:'🌊',xpNeeded:6000,desc:'You have become one with water itself.'}
 ];
 
+// ── PERSONALISED QUESTS ──
+// Built around Naman's actual day:
+// - Wakes up, brushes, drinks lemon honey water + tea (habit already exists)
+// - Breakfast 9-10AM, Lunch 1-2PM, Dinner 8-9PM
+// - Games BGMI late night 10PM+
+// - WFO: 4000 steps + table tennis | WFH: mostly sedentary
+// - Core issue: low thirst signals, bloating, needs habit anchoring
+
 function buildQuests(goal) {
-  return [
-    {id:'morning',icon:'🌅',name:'Morning Kickstart',desc:`Drink ${Math.round(goal*.15)}ml before 10 AM`,target:Math.round(goal*.15),ws:6,we:10,xp:60},
-    {id:'midday',icon:'☀️',name:'Midday Refuel',desc:`Drink ${Math.round(goal*.25)}ml between 10 AM – 2 PM`,target:Math.round(goal*.25),ws:10,we:14,xp:50},
-    {id:'afternoon',icon:'🌤️',name:'Afternoon Push',desc:`Drink ${Math.round(goal*.25)}ml between 2 – 7 PM`,target:Math.round(goal*.25),ws:14,we:19,xp:50},
-    {id:'evening',icon:'🌙',name:'Evening Wind-Down',desc:`Drink ${Math.round(goal*.10)}ml between 7 – 9 PM`,target:Math.round(goal*.10),ws:19,we:21,xp:40}
-  ];
+  const isWFO = S.dayType === 'wfo';
+  const q = [];
+
+  // QUEST 1: Wake-up hydration (6AM-9AM)
+  // You already drink lemon water — this just quantifies it
+  q.push({
+    id: 'wakeup',
+    icon: '🍋',
+    name: 'Morning Ritual',
+    desc: `Log your lemon water + tea before 9 AM (${Math.round(goal * 0.13)}ml)`,
+    target: Math.round(goal * 0.13),
+    ws: 5, we: 9,
+    xp: 70,
+    tip: 'You already do this — just log it!'
+  });
+
+  // QUEST 2: Pre-lunch hydration (11AM-1PM)
+  // Drink before lunch window — directly targets bloating
+  q.push({
+    id: 'prelunch',
+    icon: '🍱',
+    name: 'Before Lunch',
+    desc: `Drink ${Math.round(goal * 0.18)}ml before your 1-2PM lunch`,
+    target: Math.round(goal * 0.18),
+    ws: 10, we: 13,
+    xp: 65,
+    tip: 'Drink 30 min before eating — reduces bloating!'
+  });
+
+  // QUEST 3: Afternoon desk push (2PM-7PM)
+  // Longest waking window, easiest to forget at desk
+  q.push({
+    id: 'afternoon',
+    icon: isWFO ? '🏢' : '💻',
+    name: isWFO ? 'Office Grind' : 'WFH Desk Push',
+    desc: `Drink ${Math.round(goal * 0.28)}ml between 2–7 PM`,
+    target: Math.round(goal * 0.28),
+    ws: 14, we: 19,
+    xp: 60,
+    tip: isWFO ? 'Bottle on your desk. Sip between tasks.' : 'Set a timer. You won't feel thirsty — drink anyway.'
+  });
+
+  // QUEST 4: Pre-dinner + post-dinner (7PM-9:30PM)
+  // Before dinner window + settling after
+  q.push({
+    id: 'predinner',
+    icon: '🍽️',
+    name: 'Dinner Window',
+    desc: `Drink ${Math.round(goal * 0.15)}ml between 7–9:30 PM`,
+    target: Math.round(goal * 0.15),
+    ws: 19, we: 21,
+    xp: 55,
+    tip: 'Drink before dinner, not during — better digestion.'
+  });
+
+  // QUEST 5: Pre-gaming hydration (9:30PM-10:30PM)
+  // Anchored to BGMI which happens every night
+  // Replaces the useless "evening wind-down"
+  q.push({
+    id: 'pregame',
+    icon: '🎮',
+    name: 'Pre-Game Ritual',
+    desc: `Drink ${Math.round(goal * 0.12)}ml before your gaming session`,
+    target: Math.round(goal * 0.12),
+    ws: 21, we: 23,
+    xp: 50,
+    tip: 'Log it before you pick up the controller. Make it a rule.'
+  });
+
+  return q;
+}
+
+// Quest tip display helper
+function getQuestTip(q) {
+  return q.tip || '';
 }
 
 const BADGES = [
@@ -512,15 +590,17 @@ const BADGES = [
   {id:'streak7',icon:'🌟',name:'Week Warrior',desc:'Hit ≥80% of goal 7 days running'},
   {id:'goal_hit',icon:'🏆',name:'Goal Crusher',desc:'Hit your daily goal for the first time'},
   {id:'goal5',icon:'👑',name:'5× Achiever',desc:'Hit your daily goal 5 times'},
-  {id:'earlybird',icon:'🌅',name:'Early Bird',desc:'Complete the Morning Kickstart quest'},
-  {id:'allquests',icon:'🎯',name:'Quest Master',desc:'Complete all 4 quests in one day'},
+  {id:'earlybird',icon:'🌅',name:'Early Bird',desc:'Complete the Morning Ritual quest'},
+  {id:'allquests',icon:'🎯',name:'Quest Master',desc:'Complete all 5 quests in one day'},
   {id:'lv3',icon:'🐢',name:'Baby Turtle',desc:'Reach Level 3'},
   {id:'lv5',icon:'🐬',name:'Dolphin',desc:'Reach Level 5'},
   {id:'bigday',icon:'💪',name:'Hydro Hero',desc:'Log 3000ml+ water in one day'},
-  {id:'consistent',icon:'📅',name:'Consistent',desc:'Complete all 4 quests 3 days in a row'},
+  {id:'consistent',icon:'📅',name:'Consistent',desc:'Complete all quests 3 days in a row'},
   {id:'diversity',icon:'🌈',name:'Mixologist',desc:'Log 5+ different drink types in one day'},
   {id:'week2',icon:'📈',name:'Week 2',desc:'Advance to Week 2 of the ramp plan'},
-  {id:'week4',icon:'🎯',name:'Full Target',desc:'Reach Week 4 — your full hydration goal!'}
+  {id:'week4',icon:'🎯',name:'Full Target',desc:'Reach Week 4 — your full hydration goal!'},
+  {id:'gamer_hydrated',icon:'🎮',name:'Hydrated Gamer',desc:'Complete the Pre-Game Ritual quest'},
+  {id:'no_bloat',icon:'🌿',name:'Gut Friendly',desc:'Complete Before Lunch quest 5 times'}
 ];
 
 // ── STATE ──
@@ -842,8 +922,12 @@ function checkQuestXP(){
     const prog=S.questProgress[q.id]||0;
     if(prog>=q.target&&!S.questsXpGiven[q.id]){
       S.questsXpGiven[q.id]=true;awardXP(q.xp,true);
-      if(q.id==='morning'&&!S.earnedBadges.includes('earlybird')){S.earnedBadges.push('earlybird');setTimeout(()=>showToast('🌅 Badge: Early Bird earned!','🏅'),900);}
-      setTimeout(()=>showToast(`${q.icon} Quest: ${q.name} +${q.xp} XP`,'🎯'),700);
+      // Morning ritual = earlybird badge
+      if(q.id==='wakeup'&&!S.earnedBadges.includes('earlybird')){S.earnedBadges.push('earlybird');setTimeout(()=>showToast('🌅 Badge: Early Bird earned!','🏅'),900);}
+      // Pre-game badge
+      if(q.id==='pregame'&&!S.earnedBadges.includes('gamer_hydrated')){S.earnedBadges.push('gamer_hydrated');setTimeout(()=>showToast('🎮 Badge: Hydrated Gamer earned!','🏅'),900);}
+      if(q.id==='prelunch'){S.prelunchCount=(S.prelunchCount||0)+1;}
+      setTimeout(()=>showToast(`${q.icon} Quest: ${q.name} complete! +${q.xp} XP`,'🎯'),700);
     }
   });
 }
@@ -858,6 +942,8 @@ function checkBadges(){
     lv3:()=>S.level>=3,lv5:()=>S.level>=5,bigday:()=>S.current>=3000,
     consistent:()=>(S.questStreakDays||0)>=3,
     diversity:()=>new Set(S.drinksToday.map(d=>d.type)).size>=5,
+    gamer_hydrated:()=>S.earnedBadges.includes('gamer_hydrated'),
+    no_bloat:()=>(S.prelunchCount||0)>=5,
     week2:()=>(S.rampWeek||1)>=2,week4:()=>(S.rampWeek||1)>=4
   };
   BADGES.forEach(b=>{
@@ -877,14 +963,35 @@ function showBTT(b){const t=document.getElementById('btt');const e=S.earnedBadge
 // ── QUESTS ──
 function renderQuests(){
   const h=new Date().getHours();const goal=getGoal();const quests=buildQuests(goal);
-  let html='<div class="stitle">🎯 Daily Quests</div>';
+  const totalXP=quests.reduce((s,q)=>s+q.xp,0);
+  const doneCount=quests.filter(q=>(S.questProgress[q.id]||0)>=q.target).length;
+  let html=`<div class="stitle">🎯 Daily Quests <span style="font-size:10px;opacity:.45;font-weight:400;margin-left:auto">${doneCount}/${quests.length} done</span></div>`;
   quests.forEach(q=>{
-    const prog=S.questProgress[q.id]||0;const done=prog>=q.target;
-    const active=h>=q.ws&&h<q.we;const expired=!done&&h>=q.we;
+    const prog=S.questProgress[q.id]||0;
+    const done=prog>=q.target;
+    const active=h>=q.ws&&h<q.we;
+    const expired=!done&&h>=q.we;
     const pct=Math.min(100,Math.round(prog/q.target*100));
-    const timeStr=expired?'Window closed':done?'Complete!':active?'Now active!':`Opens ${q.ws<12?q.ws+'AM':(q.ws-12||12)+'PM'}`;
-    html+=`<div class="quest${done?' done':expired?' expired':''}"><div class="qcheck">${done?'✓':''}</div><div class="qinfo"><div class="qname">${q.icon} ${q.name}</div><div class="qdesc">${q.desc}</div>${!done&&!expired?`<div style="margin-top:5px;height:3px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:#38bdf8;border-radius:3px;transition:width .4s"></div></div>`:''}<div style="font-size:9.5px;opacity:.45;margin-top:3px">${timeStr}${active&&!done?' • '+prog+'/'+q.target+'ml':''}</div></div><div class="qxp${done?' done':''}">${done?'✓ +'+q.xp:'+'+q.xp} XP</div></div>`;
+    const openHr=q.ws;const closeHr=q.we;
+    const fmtHr=hr=>hr===0?'12AM':hr<12?hr+'AM':hr===12?'12PM':(hr-12)+'PM';
+    const timeStr=expired?'Window closed':done?'Complete ✓':active?`Active now · until ${fmtHr(closeHr)}`:`${fmtHr(openHr)} – ${fmtHr(closeHr)}`;
+    const tipHtml=q.tip&&!done&&!expired?`<div style="font-size:10px;color:#7dd3fc;opacity:.7;margin-top:3px">💡 ${q.tip}</div>`:'';
+    html+=`<div class="quest${done?' done':expired?' expired':active?' active-quest':''}">
+      <div class="qcheck">${done?'✓':expired?'·':active?'▶':''}</div>
+      <div class="qinfo">
+        <div class="qname">${q.icon} ${q.name}${active&&!done?'<span style="font-size:9px;background:rgba(56,189,248,.2);color:#38bdf8;padding:1px 6px;border-radius:8px;margin-left:6px;font-weight:500">NOW</span>':''}</div>
+        <div class="qdesc">${q.desc}</div>
+        ${!done&&!expired?`<div style="margin-top:6px;height:4px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${active?'#38bdf8':'rgba(255,255,255,.25)'};border-radius:3px;transition:width .4s"></div></div>`:''}
+        ${tipHtml}
+        <div style="font-size:9.5px;opacity:.4;margin-top:3px">${timeStr}${active&&!done?' · '+prog+'/'+q.target+'ml':''}</div>
+      </div>
+      <div class="qxp${done?' done':''}">${done?'✓ +'+q.xp:'+'+q.xp} XP</div>
+    </div>`;
   });
+  // All done bonus
+  if(doneCount===quests.length){
+    html+=`<div style="text-align:center;padding:10px;font-size:12px;color:#22c55e;font-weight:600">🎉 All quests done! Perfect hydration day!</div>`;
+  }
   document.getElementById('questCard').innerHTML=html;
 }
 
